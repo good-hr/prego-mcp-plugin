@@ -13,6 +13,9 @@ Use only the approved read tools `prego_hr_operations_summary`
 substitute another tool. Never use a write, approval, correction, calculation,
 or administration tool.
 
+Do not reconstruct sensitive fields or masked values that the tools did not return.
+If `dataPolicy.truncated` is true, say the result is limited and use the Prego link for the full view.
+
 Respect the current user's company, App, attendance, and people-data
 permissions. Do not infer a date, issue state, owner, or resolution from
 missing data. Separate HR and attendance findings, and say which permitted
