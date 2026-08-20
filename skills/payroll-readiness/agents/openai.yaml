@@ -1,7 +1,7 @@
 interface:
   display_name: "Payroll Readiness"
-  short_description: "Read Prego payroll readiness without changes"
-  default_prompt: "Use $payroll-readiness to check whether this payroll is ready to calculate."
+  short_description: "Read Prego payroll preparation without changes"
+  default_prompt: "Use $payroll-readiness to check preparation blockers and existing payroll results."
 dependencies:
   tools:
     - type: "mcp"

@@ -34,14 +34,6 @@
       "handoffPath": "/app/payroll/payroll-prepare"
     },
     {
-      "enum": "PAYROLL_RUN_READINESS",
-      "tool": "prego_payroll_run_readiness",
-      "capabilityId": "payroll.run.readiness.read",
-      "appCode": "payroll-run",
-      "operationId": "getPayrollPrepareReadinessSummary",
-      "handoffPath": "/app/payroll/payroll-run"
-    },
-    {
       "enum": "PAYROLL_LEDGER",
       "tool": "prego_payroll_ledger",
       "capabilityId": "payroll.ledger.read",
@@ -69,7 +61,6 @@
       "id": "payroll-readiness",
       "tools": [
         "prego_payroll_prepare_readiness",
-        "prego_payroll_run_readiness",
         "prego_payroll_ledger"
       ]
     }
