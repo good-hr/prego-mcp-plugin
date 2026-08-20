@@ -11,6 +11,9 @@ Use only the approved read tools `prego_payroll_prepare_readiness`
 (`payroll.prepare.readiness.read`) and `prego_payroll_ledger`
 (`payroll.ledger.read`). If a tool is unavailable, do not substitute another
 tool. Never start a calculation, retry, confirm results, or change a ledger.
+Call the ledger only for one payroll month and 1-100 explicit `personIds`
+already returned within the current user's permitted scope. Do not omit or
+invent `personIds` to request a company-wide ledger.
 
 Do not reconstruct sensitive fields or masked values that the tools did not return.
 If `dataPolicy.truncated` is true, say the result is limited and use the Prego link for the full view.
