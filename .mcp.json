@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "prego": {
+      "type": "http",
+      "url": "https://api.prego.team/mcp"
+    }
+  }
+}

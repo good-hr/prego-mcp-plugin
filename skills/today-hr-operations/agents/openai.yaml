@@ -1,0 +1,13 @@
+interface:
+  display_name: "Today Hr Operations"
+  short_description: "Read today's Prego HR and attendance signals"
+  default_prompt: "Use $today-hr-operations to show today's HR operations to review."
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "prego"
+      description: "Prego read-only HR operations MCP server"
+      transport: "streamable_http"
+      url: "https://api.prego.team/mcp"
+policy:
+  allow_implicit_invocation: true

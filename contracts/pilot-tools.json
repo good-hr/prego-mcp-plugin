@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "tools": [
+    {
+      "enum": "HR_OPERATIONS_SUMMARY",
+      "tool": "prego_hr_operations_summary",
+      "capabilityId": "hr.operations.summary.read",
+      "appCode": "hr-operations",
+      "operationId": "getHrOperationsHome",
+      "handoffPath": "/app/hr"
+    },
+    {
+      "enum": "ATTENDANCE_OPERATIONS_SUMMARY",
+      "tool": "prego_attendance_operations_summary",
+      "capabilityId": "attendance.operations.summary.read",
+      "appCode": "attendance-operations",
+      "operationId": "getAttendanceOperationsHome",
+      "handoffPath": "/app/attendance"
+    },
+    {
+      "enum": "PERSON_LIST",
+      "tool": "prego_person_list",
+      "capabilityId": "person.list.read",
+      "appCode": "person-list",
+      "operationId": "listPersonsByCompany",
+      "handoffPath": "/app/person-list"
+    },
+    {
+      "enum": "PAYROLL_PREPARE_READINESS",
+      "tool": "prego_payroll_prepare_readiness",
+      "capabilityId": "payroll.prepare.readiness.read",
+      "appCode": "payroll-prepare",
+      "operationId": "getPayrollPrepareReadinessSummary",
+      "handoffPath": "/app/payroll/payroll-prepare"
+    },
+    {
+      "enum": "PAYROLL_RUN_READINESS",
+      "tool": "prego_payroll_run_readiness",
+      "capabilityId": "payroll.run.readiness.read",
+      "appCode": "payroll-run",
+      "operationId": "getPayrollPrepareReadinessSummary",
+      "handoffPath": "/app/payroll/payroll-run"
+    },
+    {
+      "enum": "PAYROLL_LEDGER",
+      "tool": "prego_payroll_ledger",
+      "capabilityId": "payroll.ledger.read",
+      "appCode": "payroll-ledger",
+      "operationId": "getPayrollLedger",
+      "handoffPath": "/app/payroll/payroll-ledger"
+    }
+  ],
+  "skills": [
+    {
+      "id": "company-briefing",
+      "tools": [
+        "prego_hr_operations_summary",
+        "prego_person_list"
+      ]
+    },
+    {
+      "id": "today-hr-operations",
+      "tools": [
+        "prego_hr_operations_summary",
+        "prego_attendance_operations_summary"
+      ]
+    },
+    {
+      "id": "payroll-readiness",
+      "tools": [
+        "prego_payroll_prepare_readiness",
+        "prego_payroll_run_readiness",
+        "prego_payroll_ledger"
+      ]
+    }
+  ]
+}

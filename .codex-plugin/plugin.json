@@ -1,0 +1,27 @@
+{
+  "name": "prego",
+  "version": "0.1.0",
+  "description": "Read-only Prego HR operations assistant.",
+  "author": {
+    "name": "Prego"
+  },
+  "homepage": "https://www.prego.team",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Prego",
+    "shortDescription": "Read Prego HR operations and open the source screen.",
+    "longDescription": "Use Prego's approved read capabilities to brief company operations, review today's HR work, and check payroll readiness.",
+    "developerName": "Prego",
+    "category": "Productivity",
+    "capabilities": ["Read-only HR operations", "Prego direct links"],
+    "websiteURL": "https://www.prego.team",
+    "privacyPolicyURL": "https://www.prego.team/legal/privacy.html",
+    "termsOfServiceURL": "https://www.prego.team/legal/terms.html",
+    "defaultPrompt": [
+      "우리 회사의 최근 HR 운영 상태를 요약해줘.",
+      "오늘 확인해야 할 HR과 근태 운영 항목을 알려줘.",
+      "이번 급여를 계산할 준비가 됐는지 확인해줘."
+    ]
+  },
+  "mcpServers": "./.mcp.json"
+}
