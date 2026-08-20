@@ -29,8 +29,6 @@ Always include the relevant Prego direct links:
 - Payroll ledger: `https://prego.team/app/payroll/payroll-ledger`
 - Payroll run manual follow-up: `https://prego.team/app/payroll/payroll-run`
 
-Only add URL state when every required value is returned: preparation needs
-`companyId`, `yearMonth`, `payTypeId`, `paySeq`, and `tab`. Otherwise keep the
-base Prego link and explicitly say that its scope was not reconstructed. Do not
-claim that calculation can start; the v1 tools do not read active payroll-run
-execution state.
+Keep the base Prego links and explicitly say that their scope was not
+reconstructed. Do not claim that calculation can start; the v1 tools do not
+read active payroll-run execution state.
