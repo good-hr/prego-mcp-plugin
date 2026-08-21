@@ -155,6 +155,10 @@ function assertBackendRegistryAndHandlerDispatch(backendRoot) {
     join(mcpDirectory, "PregoMcpStatelessServer.kt"),
     "utf8",
   );
+  const payrollLedgerAdapterSource = readFileSync(
+    join(mcpDirectory, "PayrollLedgerMcpReadAdapter.kt"),
+    "utf8",
+  );
 
   assert.match(
     registrySource,
@@ -190,6 +194,21 @@ function assertBackendRegistryAndHandlerDispatch(backendRoot) {
     registrySource,
     /requestLimiter\.check\(userIdentity as CompanyScopedUserIdentity, toolName\)[\s\S]*dataPolicy\.apply\(adapter\.read\(userIdentity, arguments\)\)/,
     "BE MCP registry가 호출 제한과 응답 데이터 정책을 적용하지 않습니다",
+  );
+  assert.match(
+    registrySource,
+    /PregoMcpTool\.PAYROLL_LEDGER -> objectSchema\([\s\S]*required = listOf\("companyId", "yyyymm", "payTypeId", "paySeq", "personIds"\)[\s\S]*"minItems" to 1[\s\S]*"maxItems" to 100/,
+    "급여대장 MCP schema가 단일 월과 필수 1~100명 범위를 강제하지 않습니다",
+  );
+  assert.doesNotMatch(
+    registrySource,
+    /"yyyymms"/,
+    "급여대장 MCP schema에 다중 월 입력이 남아 있습니다",
+  );
+  assert.match(
+    payrollLedgerAdapterSource,
+    /yyyymm = input\.requiredYearMonthCompact\("yyyymm"\)[\s\S]*personIds = input\.requiredUuidList\("personIds"\)/,
+    "급여대장 adapter가 단일 월과 명시 사원 범위를 강제하지 않습니다",
   );
   assert.ok(
     !existsSync(join(mcpDirectory, "PregoMcpTools.kt")),
