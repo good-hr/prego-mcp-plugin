@@ -51,7 +51,15 @@ function recordsByTool(records) {
 }
 
 function comparable(record) {
+  if (record.kind === "foundational") {
+    return {
+      kind: record.kind,
+      capabilityId: record.capabilityId,
+      operationId: record.operationId,
+    };
+  }
   return {
+    kind: record.kind,
     capabilityId: record.capabilityId,
     appCode: record.appCode,
     operationId: record.operationId,
@@ -89,12 +97,37 @@ function frontendRegistry(frontendRoot, openApi) {
 function frontendRecords(registry) {
   return registry.apps.flatMap((app) =>
     app.capabilities.map((capability) => ({
+      kind: app.foundation ? "foundational" : "capability",
       tool: capability.tool,
       capabilityId: capability.id,
       appCode: app.appCode,
       operationId: capability.read.operationId,
       handoffPath: capability.handoff.path,
     })),
+  );
+}
+
+function frontendFoundationRecord(frontendRoot, openApi) {
+  const spec = readJson(
+    openApi && !/^https?:\/\//.test(openApi)
+      ? openApi
+      : join(
+          frontendRoot,
+          "docs/features/core/prego-plugin/pilot-openapi.json",
+        ),
+  );
+  return Object.entries(spec.paths ?? {}).flatMap(([path, methods]) =>
+    Object.entries(methods).flatMap(([method, operation]) =>
+      operation?.operationId
+        ? [
+            {
+              operationId: operation.operationId,
+              method: method.toUpperCase(),
+              path,
+            },
+          ]
+        : [],
+    ),
   );
 }
 
@@ -106,18 +139,35 @@ function backendEnumRecords(backendRoot) {
     ),
     "utf8",
   );
-  return [
-    ...source.matchAll(
-      /\n\s{4}([A-Z_]+)\(\n\s+toolName = "([^"]+)",\n\s+capabilityId = "([^"]+)",\n\s+appCode = "([^"]+)",\n\s+operationId = "([^"]+)",\n\s+handoffPath = "([^"]+)",/g,
-    ),
-  ].map((match) => ({
-    enum: match[1],
-    tool: match[2],
-    capabilityId: match[3],
-    appCode: match[4],
-    operationId: match[5],
-    handoffPath: match[6],
-  }));
+  const requiredValue = (body, name) => {
+    const match = body.match(new RegExp(`${name} = (null|"[^"]+")`));
+    if (!match) throw new Error(`BE enum에 ${name} 값이 없습니다`);
+    return match[1] === "null" ? null : match[1].slice(1, -1);
+  };
+  const optionalValue = (body, name) => {
+    const match = body.match(new RegExp(`${name} = (null|"[^"]+")`));
+    return !match || match[1] === "null" ? null : match[1].slice(1, -1);
+  };
+  return [...source.matchAll(/\n\s{4}([A-Z_]+)\(([\s\S]*?)\n\s{4}\),/g)].map(
+    (match) => {
+      const [, enumName, body] = match;
+      const appCode = optionalValue(body, "appCode");
+      const operationId = requiredValue(body, "operationId");
+      const handoffPath = optionalValue(body, "handoffPath");
+      return {
+        kind:
+          appCode === null && handoffPath === null
+            ? "foundational"
+            : "capability",
+        enum: enumName,
+        tool: requiredValue(body, "toolName"),
+        capabilityId: requiredValue(body, "capabilityId"),
+        ...(appCode === null ? {} : { appCode }),
+        ...(operationId === null ? {} : { operationId }),
+        ...(handoffPath === null ? {} : { handoffPath }),
+      };
+    },
+  );
 }
 
 function backendAdapterEnums(backendRoot) {
@@ -167,8 +217,8 @@ function assertBackendRegistryAndHandlerDispatch(backendRoot) {
   );
   assert.match(
     registrySource,
-    /\.filter \{ appAccessQueryService\.canViewApp\(it\.appCode\) \}/,
-    "BE registry가 앱 조회 권한으로 tools/list를 필터링하지 않습니다",
+    /appCode == null \|\| appAccessQueryService\.canViewApp\(it\.appCode\)/,
+    "BE registry가 foundational tool을 App gate 없이 노출하지 않습니다",
   );
   assert.match(
     handlerSource,
@@ -187,18 +237,42 @@ function assertBackendRegistryAndHandlerDispatch(backendRoot) {
   );
   assert.match(
     handlerSource,
-    /val principal = currentCompanyScopedUser\(\)[\s\S]*val execution = try \{\s*toolRegistry\.call\(principal, toolName, arguments\)/,
+    /val principal = currentCustomerScopedUser\(\)[\s\S]*val execution = try \{\s*toolRegistry\.call\(principal, toolName, arguments\)/,
     "BE MCP handler가 tools/call을 registry로 위임하지 않습니다",
   );
   assert.match(
     registrySource,
-    /requestLimiter\.check\(userIdentity as CompanyScopedUserIdentity, toolName\)[\s\S]*dataPolicy\.apply\(adapter\.read\(userIdentity, arguments\)\)/,
+    /requestLimiter\.check\(principal, toolName\)[\s\S]*dataPolicy\.apply/,
     "BE MCP registry가 호출 제한과 응답 데이터 정책을 적용하지 않습니다",
   );
   assert.match(
     registrySource,
-    /PregoMcpTool\.PAYROLL_LEDGER -> objectSchema\([\s\S]*required = listOf\("companyId", "yyyymm", "payTypeId", "paySeq", "personIds"\)[\s\S]*"minItems" to 1[\s\S]*"maxItems" to 100/,
-    "급여대장 MCP schema가 단일 월과 필수 1~100명 범위를 강제하지 않습니다",
+    /PregoMcpTool\.COMPANY_CONTEXT -> objectSchema\(emptyList\(\), emptyMap\(\)\)/,
+    "company context MCP schema는 빈 input이어야 합니다",
+  );
+  assert.match(
+    registrySource,
+    /PregoMcpTool\.PAYROLL_LEDGER -> objectSchema\([\s\S]*"scope" to ledgerScopeSchema\(\)[\s\S]*"personIds"[\s\S]*"minItems" to 1[\s\S]*"maxItems" to 100/,
+    "급여대장 MCP schema가 단일 회사와 필수 1~100명 범위를 강제하지 않습니다",
+  );
+  const ledgerScopeSchema = registrySource.match(
+    /private fun ledgerScopeSchema\(\): Map<String, Any> = mapOf\([\s\S]*?(?=\n    private fun )/,
+  )?.[0];
+  assert.ok(ledgerScopeSchema, "급여대장 전용 scope wire schema가 없습니다");
+  assert.match(
+    ledgerScopeSchema,
+    /"mode" to mapOf\("type" to "string", "enum" to listOf\("default", "selected"\)\)/,
+    "급여대장 scope mode는 default 또는 selected만 허용해야 합니다",
+  );
+  assert.doesNotMatch(
+    ledgerScopeSchema,
+    /"all"/,
+    "급여대장 scope wire schema가 all mode를 노출하면 안 됩니다",
+  );
+  assert.match(
+    ledgerScopeSchema,
+    /"companyIds" to companyIdsSchema\(1, 1\)/,
+    "급여대장 selected companyIds는 정확히 한 회사여야 합니다",
   );
   assert.doesNotMatch(
     registrySource,
@@ -207,8 +281,8 @@ function assertBackendRegistryAndHandlerDispatch(backendRoot) {
   );
   assert.match(
     payrollLedgerAdapterSource,
-    /yyyymm = input\.requiredYearMonthCompact\("yyyymm"\)[\s\S]*personIds = input\.requiredUuidList\("personIds"\)/,
-    "급여대장 adapter가 단일 월과 명시 사원 범위를 강제하지 않습니다",
+    /personIds = input\.requiredUuidList\("personIds"\)/,
+    "급여대장 adapter가 명시 사원 범위를 강제하지 않습니다",
   );
   assert.ok(
     !existsSync(join(mcpDirectory, "PregoMcpTools.kt")),
@@ -217,9 +291,13 @@ function assertBackendRegistryAndHandlerDispatch(backendRoot) {
 }
 
 function skillTools(skillPath) {
-  return [...readFileSync(skillPath, "utf8").matchAll(/`(prego_[a-z0-9_]+)`/g)]
-    .map((match) => match[1])
-    .sort();
+  return [
+    ...new Set(
+      [
+        ...readFileSync(skillPath, "utf8").matchAll(/`(prego_[a-z0-9_]+)`/g),
+      ].map((match) => match[1]),
+    ),
+  ].sort();
 }
 
 function pluginSkillIds() {
@@ -271,8 +349,62 @@ export function checkPregoContract({
     1,
     "지원하지 않는 pilot contract version입니다",
   );
+  const foundationalTools = contract.tools.filter(
+    (tool) => tool.kind === "foundational",
+  );
+  const capabilityTools = contract.tools.filter(
+    (tool) => tool.kind === "capability",
+  );
+  assert.equal(
+    foundationalTools.length,
+    1,
+    "foundational tool은 정확히 하나여야 합니다",
+  );
+  assert.equal(
+    capabilityTools.length,
+    5,
+    "business capability는 정확히 다섯이어야 합니다",
+  );
+  assert.deepEqual(
+    Object.keys(foundationalTools[0]).sort(),
+    ["capabilityId", "enum", "kind", "operationId", "tool"],
+    "company context에는 App gate나 handoff를 두면 안 됩니다",
+  );
+  assert.deepEqual(
+    comparable(foundationalTools[0]),
+    {
+      kind: "foundational",
+      capabilityId: "company.context.read",
+      operationId: "getPregoMcpCompanyContext",
+    },
+    "company context는 App gate와 handoff가 없는 foundational tool이어야 합니다",
+  );
   const registry = frontendRegistry(frontendRoot, openApi);
-  assertSameRecords("FE registry", contract.tools, frontendRecords(registry));
+  const frontendCapabilityRecords = frontendRecords(registry).filter(
+    (record) => record.kind === "capability",
+  );
+  const frontendFoundationalRecords = frontendRecords(registry).filter(
+    (record) => record.kind === "foundational",
+  );
+  assertSameRecords("FE registry", capabilityTools, frontendCapabilityRecords);
+  assertSameRecords(
+    "FE foundational registry",
+    foundationalTools,
+    frontendFoundationalRecords,
+  );
+  assert.deepEqual(
+    frontendFoundationRecord(frontendRoot, openApi).filter(
+      (operation) => operation.operationId === foundationalTools[0].operationId,
+    ),
+    [
+      {
+        operationId: foundationalTools[0].operationId,
+        method: "GET",
+        path: "/api/v1/prego/mcp/company-context",
+      },
+    ],
+    "FE pinned OpenAPI에 company context GET provenance가 없습니다",
+  );
   assertSameRecords(
     "BE PregoMcpTool enum",
     contract.tools,
@@ -299,6 +431,16 @@ export function checkPregoContract({
       actualTools,
       [...skill.tools].sort(),
       `${skill.id}: 허용 tool이 contract와 다릅니다`,
+    );
+    assert.equal(
+      skill.tools[0],
+      foundationalTools[0].tool,
+      `${skill.id}: business read 전에 company context를 호출해야 합니다`,
+    );
+    assert.match(
+      readFileSync(join(PLUGIN_ROOT, "skills", skill.id, "SKILL.md"), "utf8"),
+      /First call `prego_company_context`/,
+      `${skill.id}: company context 선호출 지침이 없습니다`,
     );
     assert.ok(
       actualTools.every((tool) => approvedTools.has(tool)),
