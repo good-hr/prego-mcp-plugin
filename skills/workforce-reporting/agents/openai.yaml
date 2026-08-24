@@ -1,0 +1,13 @@
+interface:
+  display_name: "Workforce Reporting"
+  short_description: "Create sourced Prego workforce reports"
+  default_prompt: "Use $workforce-reporting to create this month's workforce report."
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "prego"
+      description: "Prego HR operations MCP server"
+      transport: "streamable_http"
+      url: "https://api.prego.team/mcp"
+policy:
+  allow_implicit_invocation: true
