@@ -178,16 +178,18 @@ function backendAdapterEnums(backendRoot) {
   return readdirSync(directory)
     .filter(
       (file) =>
-        file.endsWith("McpReadAdapter.kt") && file !== "PregoMcpReadAdapter.kt",
+        file.includes("McpReadAdapter") && file !== "PregoMcpReadAdapter.kt",
     )
-    .map((file) => {
+    .flatMap((file) => {
       const source = readFileSync(join(directory, file), "utf8");
-      const match = source.match(
-        /TypedPregoMcpReadAdapter<[^>]+>\(\s*PregoMcpTool\.([A-Z_]+)/,
-      );
-      if (!match)
+      const matches = [
+        ...source.matchAll(
+          /TypedPregoMcpReadAdapter<[^>]+>\(\s*PregoMcpTool\.([A-Z_]+)/g,
+        ),
+      ];
+      if (!matches.length)
         throw new Error(`BE adapter ${file}에 PregoMcpTool 연결이 없습니다`);
-      return match[1];
+      return matches.map((match) => match[1]);
     })
     .sort();
 }

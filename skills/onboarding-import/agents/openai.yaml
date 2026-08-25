@@ -1,0 +1,13 @@
+interface:
+  display_name: "Prego Onboarding Import"
+  short_description: "Build and preflight Prego onboarding workbooks"
+  default_prompt: "Use $onboarding-import to prepare official Prego employee onboarding files from these source spreadsheets."
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "prego"
+      description: "Prego onboarding import MCP server"
+      transport: "streamable_http"
+      url: "https://api.prego.team/mcp"
+policy:
+  allow_implicit_invocation: true
