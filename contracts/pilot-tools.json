@@ -46,6 +46,24 @@
     },
     {
       "kind": "capability",
+      "enum": "ONBOARDING_IMPORT_CATALOG",
+      "tool": "prego_onboarding_import_catalog",
+      "capabilityId": "onboarding.import.catalog.read",
+      "appCode": "onboarding-setting",
+      "operationId": "downloadPersonMasterUploadTemplate",
+      "handoffPath": "/app/setting/onboarding-setting"
+    },
+    {
+      "kind": "capability",
+      "enum": "ONBOARDING_IMPORT_PREFLIGHT",
+      "tool": "prego_onboarding_import_preflight",
+      "capabilityId": "onboarding.import.preflight.read",
+      "appCode": "onboarding-setting",
+      "operationId": "downloadPersonMasterUploadTemplate",
+      "handoffPath": "/app/setting/onboarding-setting"
+    },
+    {
+      "kind": "capability",
       "enum": "WORKFORCE_SNAPSHOT",
       "tool": "prego_workforce_snapshot",
       "capabilityId": "workforce.snapshot.read",
@@ -154,6 +172,14 @@
         "prego_payroll_prepare_readiness",
         "prego_payroll_policy_preview",
         "prego_person_list"
+      ]
+    },
+    {
+      "id": "onboarding-import",
+      "tools": [
+        "prego_company_context",
+        "prego_onboarding_import_catalog",
+        "prego_onboarding_import_preflight"
       ]
     }
   ]
