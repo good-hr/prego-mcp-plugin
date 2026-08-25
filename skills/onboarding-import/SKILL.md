@@ -18,30 +18,48 @@ organization, job, duty, pay item, bank, or policy code. Group ambiguous values
 into a short blocker question. Do not invent values for missing required
 fields. Do not infer that a field is required from example values, cell styles,
 or dropdowns; use the official preflight result to decide whether a blank field
-blocks delivery. Never copy passwords, credentials, resident-registration numbers, or
-passport numbers. Account, tax, insurance, retirement, and garnishment fields
-may be filled only when the source explicitly contains them and the matching
-payroll group is requested; do not repeat their raw values in chat.
+blocks delivery. Exclude passwords, credentials, resident-registration numbers,
+and passport numbers from generated files and chat. If the source contains them,
+warn the user without making source cleanup a blocker. Account, tax, insurance,
+retirement, and garnishment fields may be filled only when the source explicitly
+contains them and the matching payroll group is requested; do not repeat their
+raw values in chat.
 
 For a short or vague request such as "이거 Prego에 넣어줘", behave as a beginner
 guide: explain the selected files in plain Korean and ask only blocking mapping
 questions. For an HR operator, summarize missing rows and next actions. For a
 payroll operator, keep HR and payroll validation results separate and never
-call a file payroll-ready. For an implementation expert, honor explicit group,
-cutover date, mapping, and chunk choices and report source coverage and excluded
-rows. If the user does not state a level, infer it from their requested control,
-not from job title.
+call a file payroll-ready. Explain that onboarding preflight checks whether the
+file can be uploaded; zero errors do not prove payroll calculation, payment, or
+filing readiness. For an implementation expert, honor explicit group, cutover
+date, and mapping choices and report source coverage and excluded rows. If the
+user does not state a level, infer it from their requested control, not from job
+title.
 
-Keep each official workbook at 100 data rows or fewer. For larger sources,
-split deterministically by source order and preserve a source-row-to-file-row
-mapping. Encode each completed workbook and call
-`prego_onboarding_import_preflight`. Fix only errors whose correction is exact
-from the source and workbook codes; otherwise return row, field, and one grouped
-question. Repeat preflight until each deliverable is valid or explicitly
-blocked.
+Create one official workbook per selected information type regardless of the
+number of employees. Keep all applicable source rows in their original order;
+do not split one information type into multiple workbooks. Encode each completed
+workbook and call `prego_onboarding_import_preflight`. Fix only errors whose
+correction is exact from the source and workbook codes; otherwise return row,
+field, and one grouped question. Call preflight again only after changing a
+workbook to fix an error returned by the previous call. Do not recheck an
+unchanged or already valid workbook merely for confirmation.
+
+Treat the first preflight as a reconciliation preview. Use its row decisions to
+separate `NEW`, `CHANGE_REVIEW`, `UNCHANGED`, and `IDENTITY_CONFLICT` rows.
+Exclude `UNCHANGED` rows from the deliverable and report their count as excluded
+coverage. A same-name, different-employee-number row is an identity conflict,
+never proof of a match; withhold it and ask whether it is a different person or
+an employee-number correction. For `CHANGE_REVIEW`, show the source row and
+changed field names without repeating existing or sensitive values, and wait
+for explicit confirmation before including that row. Never reinterpret either
+case as permission to overwrite. After the user resolves conflicts and approves
+changes, build the final workbook from new rows plus only the approved changed
+rows, preserve source order, and preflight it again.
 
 Return the generated workbook files, per-file valid/error/warning counts,
-unresolved blockers, source coverage, and the Prego handoffs. Preflight is
+new/changed/unchanged/conflict counts, unresolved blockers, source coverage,
+and the Prego handoffs. Preflight is
 read-only and does not create a batch, upload, save, generate codes, or mark
 system onboarding complete. Tell the user to inspect and upload the files in
 Prego. Because a handoff cannot attach a local workbook or preselect an upload
