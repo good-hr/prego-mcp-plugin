@@ -13,6 +13,12 @@ official empty workbook. Preserve its sheets, headers, code rows, dropdowns,
 and hidden metadata; fill only the Data sheet. Never recreate a Prego workbook
 from memory.
 
+A source field that could fit more than one information type is not enough to
+select an additional workbook. For example, a hire date alone does not prove an
+HR event type or employment status. Select an event, history, or payroll group
+only when its required business values are explicit in the source or confirmed
+by the user. Do not derive required values merely to make a template pass.
+
 Use exact codes from each workbook's Codes sheet. Do not fuzzy-map an
 organization, job, duty, pay item, bank, or policy code. Group ambiguous values
 into a short blocker question. Do not invent values for missing required
