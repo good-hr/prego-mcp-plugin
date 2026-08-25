@@ -1,12 +1,12 @@
 interface:
-  display_name: "Company Briefing"
-  short_description: "Read Prego company HR operating signals"
-  default_prompt: "Use $company-briefing to summarize our company HR operations."
+  display_name: "Company HR Briefing"
+  short_description: "Brief leaders on sourced Prego HR signals"
+  default_prompt: "Use $company-briefing to brief me on our company's workforce and HR operating signals."
 dependencies:
   tools:
     - type: "mcp"
       value: "prego"
-      description: "Prego read-only HR operations MCP server"
+      description: "Prego workforce and HR operations MCP server"
       transport: "streamable_http"
       url: "https://api.prego.team/mcp"
 policy:

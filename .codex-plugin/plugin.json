@@ -1,7 +1,7 @@
 {
   "name": "prego",
-  "version": "0.1.0",
-  "description": "Read-only Prego HR operations assistant.",
+  "version": "0.1.0+codex.20260824165628",
+  "description": "Prego company, workforce, HR, and payroll assistant.",
   "author": {
     "name": "Prego"
   },
@@ -9,18 +9,25 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Prego",
-    "shortDescription": "Read Prego HR operations and open the source screen.",
-    "longDescription": "Use Prego's approved read capabilities to brief company operations, review today's HR work, and check payroll readiness.",
+    "shortDescription": "Review Prego company, workforce, and payroll signals.",
+    "longDescription": "Brief leaders on workforce and HR signals, create detailed workforce reports, guide HR and payroll operations, and test supported payroll policy drafts with Prego evidence and truthful screen handoffs.",
     "developerName": "Prego",
     "category": "Productivity",
-    "capabilities": ["Read-only HR operations", "Prego direct links"],
+    "capabilities": [
+      "Executive HR briefing",
+      "Workforce reporting",
+      "HR and payroll operations",
+      "Payroll policy preview",
+      "Prego direct links"
+    ],
     "websiteURL": "https://www.prego.team",
     "privacyPolicyURL": "https://www.prego.team/legal/privacy.html",
     "termsOfServiceURL": "https://www.prego.team/legal/terms.html",
     "defaultPrompt": [
-      "우리 회사의 최근 HR 운영 상태를 요약해줘.",
-      "오늘 확인해야 할 HR과 근태 운영 항목을 알려줘.",
-      "이번 급여를 계산할 준비가 됐는지 확인해줘."
+      "\uc774\ubc88 \ub2ec \uc6b0\ub9ac \ud68c\uc0ac\uc758 \uc778\ub825\uacfc HR \uc6b4\uc601 \uc0c1\ud0dc\uc5d0\uc11c \ub300\ud45c\uac00 \ubd10\uc57c \ud560 \uc810\uc744 \uc694\uc57d\ud574\uc918.",
+      "\uc774\ubc88 \ub2ec \uc778\uc6d0\ud604\ud669 \ub9ac\ud3ec\ud2b8\ub97c PPT\ub85c \ub9cc\ub4e4\uc5b4\uc918.",
+      "\uc624\ub298 \ud655\uc778\ud574\uc57c \ud560 HR\uacfc \uadfc\ud0dc \uc6b4\uc601 \ud56d\ubaa9\uc744 \uc54c\ub824\uc918.",
+      "\uae09\uc5ec \ud655\uc815 \uc774\ud6c4 \ub0a8\uc740 \uc77c\uc744 \uc54c\ub824\uc918."
     ]
   },
   "mcpServers": "./.mcp.json"

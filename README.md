@@ -1,14 +1,16 @@
 # Prego MCP plugin
 
-Prego의 HR 운영 데이터를 ChatGPT, Codex, Claude, Gemini CLI에서 조회하고, 같은 상태의 Prego 화면으로 이동하는 read-only 플러그인이다.
+Prego의 인사·급여 데이터를 ChatGPT, Codex, Claude, Gemini CLI에서 조회하고, 보고서 작성과 운영 점검 뒤 근거가 되는 Prego 화면으로 이동하는 플러그인이다.
 
 ## 제공 스킬
 
-- `company-briefing`: HR 운영 요약과 재직자 현황
-- `today-hr-operations`: HR·근태의 긴급 확인 항목
-- `payroll-readiness`: 급여 준비·실행 준비도·원장 결과
+- `company-briefing`: 대표·인사 총괄을 위한 인력·HR 운영 브리핑
+- `workforce-reporting`: 조직·직위·직무 인원현황 보고서와 인원·인건비 변화 분석
+- `hr-control-tower`: 인사 총괄의 위험·영향 요약과 운영 담당자의 대상·후속 화면
+- `payroll-operations`: 급여 준비, 월 운영 체크리스트, 개인 급여 차이 검토
+- `payroll-policy-builder`: 지급항목 계산식 초안 검증과 비저장 표본 테스트
 
-플러그인은 `https://api.prego.team/mcp`만 사용한다. 고객에서 외부 AI 연결을 활성화한 뒤 Prego 로그인, 조직 선택, 외부 앱 연결 확인을 거친다. 한 연결은 고객에 고정되고, 조회할 회사 범위는 현재 권한으로 동적으로 정한다. Prego의 MASTER·ADMIN은 `설정 > 외부 AI 연결`에서 제공자별 연결 허용 여부를 관리할 수 있고, 연결은 외부 앱의 연결 설정에서 해제할 수 있다. 쓰기, 승인, 급여 계산·확정 도구는 포함하지 않는다.
+플러그인은 `https://api.prego.team/mcp`만 사용한다. 고객에서 외부 AI 연결을 활성화한 뒤 Prego 로그인, 조직 선택, 외부 앱 연결 확인을 거친다. 한 연결은 고객에 고정되고, 조회할 회사 범위는 현재 권한으로 동적으로 정한다. Prego의 MASTER·ADMIN은 `설정 > 외부 AI 연결`에서 제공자별 연결 허용 여부를 관리할 수 있고, 연결은 외부 앱의 연결 설정에서 해제할 수 있다. 정책 preview를 포함한 모든 도구는 비저장이며 쓰기, 승인, 급여 계산·확정은 하지 않는다. 화면 링크는 제품이 지원하는 회사·기간·탭·필터만 복원하며, 지원하지 않는 대상 상태는 일반 확인 화면으로 안내한다.
 
 외부 AI가 반환 데이터를 저장·처리·국외이전하는 조건은 고객사가 선택한 서비스의 정책과 계약을 따른다. Prego MCP 감사 이벤트에는 호출 주체·외부 앱·tool·건수·상태만 남기며 prompt, tool 인자, 응답 payload는 저장하지 않는다.
 

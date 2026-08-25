@@ -1,0 +1,13 @@
+interface:
+  display_name: "HR Control Tower"
+  short_description: "Prioritize HR work and lifecycle gaps"
+  default_prompt: "Use $hr-control-tower to show what HR should handle first today."
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "prego"
+      description: "Prego HR operations MCP server"
+      transport: "streamable_http"
+      url: "https://api.prego.team/mcp"
+policy:
+  allow_implicit_invocation: true

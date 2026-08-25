@@ -1,0 +1,13 @@
+interface:
+  display_name: "Payroll Operations"
+  short_description: "Review payroll readiness and differences"
+  default_prompt: "Use $payroll-operations to review this payroll and its remaining work."
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "prego"
+      description: "Prego payroll MCP server"
+      transport: "streamable_http"
+      url: "https://api.prego.team/mcp"
+policy:
+  allow_implicit_invocation: true
