@@ -15,7 +15,9 @@ If `dataPolicy.truncated` is true, state that the priorities are based on a
 limited result and provide the returned Prego handoff for the full view.
 
 For a new-hire or leaver question, call `prego_person_lifecycle_readiness` with
-the matching lifecycle and explicit date range. Report each returned check as
+the matching lifecycle and date range. If the user omits the range, use today
+through 30 days ahead for onboarding and state the applied range; ask for the
+range for offboarding. Report each returned check as
 `READY`, `MISSING`, `NOT_APPLICABLE`, or `UNKNOWN`. A missing permission,
 unsupported check, or absent source is `UNKNOWN`, never complete.
 

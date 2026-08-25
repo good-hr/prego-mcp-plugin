@@ -8,6 +8,8 @@ description: "Create detailed Prego workforce reports and explain sourced headco
 Call `prego_company_context`, resolve the requested scope, then call
 `prego_workforce_snapshot` for the requested as-of date. If the user requests
 a comparison, call it once for each of the two dates.
+For a vague recent-change question with no dates, compare today with the end of
+the previous month and state those dates instead of asking for a period.
 Use the fewest snapshots needed: one call returns organization, position, job,
 and employment charts for its requested hierarchy levels. Do not enumerate
 level combinations.
