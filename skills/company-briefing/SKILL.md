@@ -18,7 +18,8 @@ Return, in order:
 3. `Decision needed`, `Monitor`, and `Unknown` items supported by the results;
 4. company scope, reference dates, coverage, truncation, and returned handoffs.
 
-Do not infer revenue, budget, productivity, hiring-pipeline, legal, or business
-causes that Prego did not return. A missing source is `Unknown`, not healthy.
+Do not infer technical, configuration, integration, or business causes that
+Prego did not return; report the cause as `Unknown`. A missing source is
+`Unknown`, not healthy.
 Do not create a deck unless the user explicitly requests one; detailed
 workforce reports belong to `$workforce-reporting`.

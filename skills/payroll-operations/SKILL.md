@@ -5,7 +5,11 @@ description: "Review Prego payroll readiness, post-confirmation follow-up, and o
 
 # Payroll operations
 
-Call `prego_company_context` and resolve exactly one company. Use:
+Call `prego_company_context` and resolve exactly one company. For a go/no-go or
+remaining-work question, call `prego_payroll_prepare_readiness` first, then
+call `prego_payroll_downstream_status` for the same operating month.
+Downstream status is month-scoped and does not take a payroll type or sequence.
+For other requests, use:
 
 - `prego_payroll_prepare_readiness` before calculation;
 - `prego_payroll_downstream_status` for the selected month's Prego payroll-operation checklist;
