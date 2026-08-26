@@ -26,6 +26,12 @@ Separate blockers, follow-up work, completed Prego records,
 and unknown external states. A generated banking file is not proof that a bank
 paid employees. The monthly operation checklist is not proof that a payroll
 result was confirmed; distinguish default events from linked completion state.
+For go/no-go answers, present four separate sections: calculation readiness and
+its returned blockers; non-blocking data observations; Prego checklist items
+without a completion mark; and external states Prego cannot know. A raw missing
+count is not a blocker or required action unless readiness returns it as an
+issue or action item. Describe an unmarked checklist item only as not marked
+complete in Prego, not as proof that the external task was not done.
 Explain a variance only from returned item deltas and
 calculation provenance; do not invent a business cause.
 

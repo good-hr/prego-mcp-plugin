@@ -18,6 +18,12 @@ Return, in order:
 3. `Decision needed`, `Monitor`, and `Unknown` items supported by the results;
 4. company scope, reference dates, coverage, truncation, and returned handoffs.
 
+Keep the opening assessment factual. Do not add qualitative labels such as
+healthy, active, or stable unless a returned field states that judgment.
+Use `Decision needed` only for an actual choice or tradeoff; otherwise write
+`Decision needed: none` and place operational checks under `Monitor`.
+Attendance eligibility or operation rate is not proof of complete punch data;
+present it separately from commute anomalies and recognized work time.
 Do not infer technical, configuration, integration, or business causes that
 Prego did not return; report the cause as `Unknown`. A missing source is
 `Unknown`, not healthy.
