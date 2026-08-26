@@ -7,7 +7,9 @@ description: "Prepare and preflight official Prego employee and payroll onboardi
 
 Call `prego_company_context` and resolve one company. Call
 `prego_onboarding_import_catalog` without `itemId` before deciding which files
-to create. Inspect only files attached in the current chat or explicitly
+to create. Always make these two discovery calls even when no source file is
+attached; a missing attachment stops item selection and preflight, not discovery.
+Inspect only files attached in the current chat or explicitly
 supplied in the current workspace. If none is available, ask for an attachment;
 never search for or reuse prior or temporary artifacts. Select only groups with
 source evidence, then call the catalog once per selected `itemId` to obtain the
