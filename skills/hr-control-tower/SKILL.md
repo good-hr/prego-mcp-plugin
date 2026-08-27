@@ -7,10 +7,12 @@ description: "Prioritize work that HR should handle and check new-hire or leaver
 
 Call `prego_company_context` first and resolve the company scope. For daily
 priorities, call `prego_hr_operations_summary` and
-`prego_attendance_operations_summary` with `previewSize: 0`. Keep HR action
-signals and attendance risk or closing signals distinct. Prioritize explicit
-action-required and risk categories, then affected counts; never invent a due
-date, owner, severity, or blocking status that the tools did not return.
+`prego_attendance_operations_summary` with `previewSize: 0`, unless the user
+explicitly asks who is affected; then request the smallest useful preview.
+Keep HR action signals and attendance risk or closing signals distinct.
+Prioritize explicit action-required and risk categories, then affected counts;
+never invent a due date, owner, severity, or blocking status that the tools did
+not return.
 If `dataPolicy.truncated` is true, state that the priorities are based on a
 limited result and provide the returned Prego handoff for the full view.
 
