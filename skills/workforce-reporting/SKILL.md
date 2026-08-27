@@ -5,6 +5,12 @@ description: "Create detailed Prego workforce reports and explain sourced headco
 
 # Workforce reporting
 
+HR and payroll records affect people and consequential work. Keep observations,
+interpretations, and actions distinct. Use neutral language; do not judge an
+employee, team, or company, or assign significance, cause, priority, or
+completion beyond the returned evidence. State uncertainty instead of filling
+gaps.
+
 Call `prego_company_context`, resolve the requested scope, then call
 `prego_workforce_snapshot` for the requested as-of date. If the user requests
 a comparison, call it once for each of the two dates.

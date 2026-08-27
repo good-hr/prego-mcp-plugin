@@ -17,6 +17,13 @@ description: "Brief a representative or HR leader on Prego workforce and operati
 
 ## Interpretation boundaries
 
+HR and payroll records affect people and consequential work. Keep observations,
+interpretations, and actions distinct. Use neutral language; do not judge an
+employee, team, or company, or assign significance, cause, priority, or
+completion beyond the returned evidence. State uncertainty instead of filling
+gaps. Write this briefing as an information organizer, not as a consultant
+diagnosing the company.
+
 Use aggregate counts only; do not expose preview-row names or turn the briefing
 into an operator task queue. For a current month, separate returned lifecycle
 events in
@@ -30,9 +37,8 @@ evaluation source and person count; it is not proof of company-wide absence.
 Attendance eligibility or operation rate is not proof of complete punch data;
 present it separately from commute anomalies and recognized work time.
 
-Keep the opening factual. Do not add qualitative labels such as healthy, high,
-or stable without a returned benchmark. Do not infer technical, configuration,
-integration, or business causes that Prego did not return.
+Do not add qualitative labels without a returned benchmark. Put unsupported
+significance, cause, or priority under `Unknown`.
 
 ## Output
 

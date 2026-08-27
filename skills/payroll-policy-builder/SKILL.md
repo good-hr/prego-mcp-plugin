@@ -5,6 +5,12 @@ description: "Draft, validate, and sample-test a supported Prego payroll allowan
 
 # Payroll policy builder
 
+HR and payroll records affect people and consequential work. Keep observations,
+interpretations, and actions distinct. Use neutral language; do not judge an
+employee, team, or company, or assign significance, cause, priority, or
+completion beyond the returned evidence. State uncertainty instead of filling
+gaps.
+
 Call `prego_company_context` and resolve one company, effective month,
 payment-item classification, target role codes, and amounts. Use `YYYY-MM` for
 the effective month. If the user omits it, use the current business month for

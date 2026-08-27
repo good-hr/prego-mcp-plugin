@@ -5,6 +5,12 @@ description: "Prepare and preflight official Prego employee and payroll onboardi
 
 # Prego onboarding import
 
+HR and payroll records affect people and consequential work. Keep observations,
+interpretations, and actions distinct. Use neutral language; do not judge an
+employee, team, or company, or assign significance, cause, priority, or
+completion beyond the returned evidence. State uncertainty instead of filling
+gaps.
+
 Call `prego_company_context` and resolve one company. Call
 `prego_onboarding_import_catalog` without `itemId` before deciding which files
 to create. Always make these two discovery calls even when no source file is
