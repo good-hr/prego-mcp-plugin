@@ -14,9 +14,10 @@ date, owner, severity, or blocking status that the tools did not return.
 If `dataPolicy.truncated` is true, state that the priorities are based on a
 limited result and provide the returned Prego handoff for the full view.
 
-Separate current-month events effective through the returned as-of date from
-later scheduled events. Do not call their difference headcount change. A zero
-risk count applies only to the returned evaluation source and person count.
+Separate returned current-month lifecycle events effective through the as-of
+date from later scheduled events. Do not call their difference headcount
+change. A zero risk count applies only to the returned evaluation source and
+person count.
 
 For a new-hire or leaver question, call `prego_person_lifecycle_readiness` with
 the matching lifecycle and explicit date range. Report each returned check as

@@ -18,7 +18,8 @@ description: "Brief a representative or HR leader on Prego workforce and operati
 ## Interpretation boundaries
 
 Use aggregate counts only; do not expose preview-row names or turn the briefing
-into an operator task queue. For a current month, separate
+into an operator task queue. For a current month, separate returned lifecycle
+events in
 `effectiveThroughAsOf` from `scheduledAfterAsOf`. Monthly hire and termination
 counts are not headcount change; only compare two workforce snapshots when the
 user asks for change.
