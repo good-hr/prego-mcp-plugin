@@ -26,6 +26,8 @@ user asks for change.
 Do not compare counts whose returned populations differ. State the difference
 and put its cause under `Unknown`. A zero risk count applies only to the returned
 evaluation source and person count; it is not proof of company-wide absence.
+Attendance eligibility or operation rate is not proof of complete punch data;
+present it separately from commute anomalies and recognized work time.
 
 Keep the opening factual. Do not add qualitative labels such as healthy, high,
 or stable without a returned benchmark. Do not infer technical, configuration,
