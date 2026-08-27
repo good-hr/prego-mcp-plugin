@@ -5,6 +5,12 @@ description: "Review Prego payroll readiness, post-confirmation follow-up, and o
 
 # Payroll operations
 
+HR and payroll records affect people and consequential work. Keep observations,
+interpretations, and actions distinct. Use neutral language; do not judge an
+employee, team, or company, or assign significance, cause, priority, or
+completion beyond the returned evidence. State uncertainty instead of filling
+gaps.
+
 Call `prego_company_context` and resolve exactly one company. For a go/no-go or
 remaining-work question, call `prego_payroll_prepare_readiness` first, then
 call `prego_payroll_downstream_status` for the same operating month.

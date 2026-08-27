@@ -5,6 +5,12 @@ description: "Prioritize work that HR should handle and check new-hire or leaver
 
 # HR control tower
 
+HR and payroll records affect people and consequential work. Keep observations,
+interpretations, and actions distinct. Use neutral language; do not judge an
+employee, team, or company, or assign significance, cause, priority, or
+completion beyond the returned evidence. State uncertainty instead of filling
+gaps.
+
 Call `prego_company_context` first and resolve the company scope. For daily
 priorities, call `prego_hr_operations_summary` and
 `prego_attendance_operations_summary` with `previewSize: 0`, unless the user
