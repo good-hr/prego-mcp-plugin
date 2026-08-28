@@ -25,12 +25,12 @@ Then call `prego_payroll_policy_preview` without a formula to discover the
 available variables, functions, operators, and allowed duty codes. Then call `prego_person_list` and select at most five
 permission-visible samples whose returned `dutyCode` covers the target roles
 and a non-target role. Never scan or guess people. Call the preview again with
-the formula, a clear draft item code and name, and those sample IDs. If no
-permission-visible sample is returned, do not call formula preview with an
-empty `samplePersonIds`; return the exact draft and state that validation and
-amount impact remain unverified. A draft code and the default calculation
-order are preview inputs, not business blockers; label them as changeable and
-let validation report a conflict. In the formula, use the returned canonical
+the formula, a clear draft item code and name, and those sample IDs. If the
+selected samples contain no permission-visible employee with a target-role
+`dutyCode`, do not call formula preview; return the exact draft and state that
+validation and target-role amount impact remain unverified. A draft code and
+the default calculation order are preview inputs, not business blockers; label
+them as changeable and let validation report a conflict. In the formula, use the returned canonical
 variable expressions exactly; never invent a variable alias or helper
 function. Use only variables, functions, and operators returned by its catalog.
 The preview must validate the

@@ -49,7 +49,7 @@ function assertSkillInputConventions() {
   );
   assert.match(
     payrollPolicy,
-    /do not call formula preview with an\s+empty `samplePersonIds`/,
+    /selected samples contain no permission-visible employee with a target-role/,
   );
   assert.match(companyBriefing, /`includeIdle: false` population/);
   assert.match(workforceReporting, /keep `includeIdle: false`/);
