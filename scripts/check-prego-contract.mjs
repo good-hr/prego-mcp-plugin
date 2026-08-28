@@ -173,6 +173,58 @@ function frontendFoundationRecord(frontendRoot, openApi) {
   );
 }
 
+function openApiDocument(path) {
+  if (/^https?:\/\//.test(path)) {
+    throw new Error(
+      "full OpenAPI provenance은 로컬에서 정규화한 artifact여야 합니다. runtime checker를 사용하세요",
+    );
+  }
+  return readJson(path);
+}
+
+/**
+ * The pilot document intentionally has only the MCP operations.  It is useful
+ * for a fast FE-only check, but must never become the evidence for a release
+ * registry that claims full OpenAPI provenance.
+ */
+export function assertFullOpenApiArtifact(path) {
+  const document = openApiDocument(path);
+  const schemaCount = Object.keys(document.components?.schemas ?? {}).length;
+  const operationIds = new Set(
+    Object.values(document.paths ?? {}).flatMap((pathItem) =>
+      Object.values(pathItem ?? {}).flatMap((operation) =>
+        operation?.operationId ? [operation.operationId] : [],
+      ),
+    ),
+  );
+  const pilotOperationIds = new Set(
+    readJson(CONTRACT_PATH).tools.map((tool) => tool.operationId),
+  );
+
+  assert.notEqual(
+    document.info?.title,
+    "Prego MCP pilot OpenAPI contract",
+    "pilot-openapi.json은 full OpenAPI provenance로 사용할 수 없습니다",
+  );
+  assert.ok(
+    [...pilotOperationIds].every((operationId) =>
+      operationIds.has(operationId),
+    ),
+    "full OpenAPI에는 모든 Prego pilot operationId가 필요합니다",
+  );
+  assert.ok(
+    [...operationIds].some(
+      (operationId) => !pilotOperationIds.has(operationId),
+    ),
+    "full OpenAPI에는 Prego pilot 밖의 operationId가 하나 이상 필요합니다",
+  );
+  assert.ok(
+    schemaCount > 0,
+    "full OpenAPI에는 components.schemas가 필요합니다",
+  );
+  return document;
+}
+
 function backendEnumRecords(backendRoot) {
   const source = readFileSync(
     join(
@@ -386,6 +438,13 @@ export function checkPregoContract({
     },
     "company context는 App gate와 handoff가 없는 foundational tool이어야 합니다",
   );
+  if (requireOpenApiDigest) {
+    assert.ok(
+      openApi,
+      "full OpenAPI provenance에는 --openapi artifact가 필요합니다",
+    );
+    assertFullOpenApiArtifact(openApi);
+  }
   const registry = frontendRegistry(frontendRoot, openApi);
   const frontendCapabilityRecords = frontendRecords(registry).filter(
     (record) => record.kind === "capability",
