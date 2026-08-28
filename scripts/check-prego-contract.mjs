@@ -13,6 +13,48 @@ function readJson(path) {
   return JSON.parse(readFileSync(path, "utf8"));
 }
 
+function assertPluginManifest() {
+  const manifest = readJson(join(PLUGIN_ROOT, ".codex-plugin", "plugin.json"));
+  assert.match(
+    manifest.version ?? "",
+    /^\d+\.\d+\.\d+\+codex\.\d{14}$/,
+    "plugin version은 release마다 식별 가능한 semver+codex timestamp여야 합니다",
+  );
+  assert.ok(
+    (manifest.interface?.defaultPrompt?.length ?? 0) <= 3,
+    "plugin defaultPrompt는 Codex가 지원하는 최대 3개를 넘을 수 없습니다",
+  );
+}
+
+function assertSkillInputConventions() {
+  const readSkill = (id) =>
+    readFileSync(join(PLUGIN_ROOT, "skills", id, "SKILL.md"), "utf8");
+  const payrollOperations = readSkill("payroll-operations");
+  const payrollPolicy = readSkill("payroll-policy-builder");
+  const companyBriefing = readSkill("company-briefing");
+  const workforceReporting = readSkill("workforce-reporting");
+
+  assert.match(
+    payrollOperations,
+    /prego_payroll_prepare_readiness`:\s*`yyyymm` in `YYYYMM`/,
+  );
+  assert.match(
+    payrollOperations,
+    /prego_payroll_downstream_status`:\s*`operatingMonth` in `YYYY-MM`/,
+  );
+  assert.match(payrollPolicy, /prego_payroll_prepare_readiness\.yyyymm`/);
+  assert.match(
+    payrollPolicy,
+    /`2026-08` in policy preview and `202608` in readiness/,
+  );
+  assert.match(
+    payrollPolicy,
+    /do not call formula preview with an\s+empty `samplePersonIds`/,
+  );
+  assert.match(companyBriefing, /`includeIdle: false` population/);
+  assert.match(workforceReporting, /keep `includeIdle: false`/);
+}
+
 function parseArguments(args) {
   const result = {
     frontendRoot: resolve(PLUGIN_ROOT, "..", "good-hr-frontend"),
@@ -301,6 +343,8 @@ export function checkPregoContract({
   openApi = null,
   requireOpenApiDigest = false,
 } = {}) {
+  assertPluginManifest();
+  assertSkillInputConventions();
   for (const [label, path] of [
     ["frontend", frontendRoot],
     ["backend", backendRoot],

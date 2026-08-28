@@ -14,6 +14,11 @@ gaps.
 Call `prego_company_context` and resolve exactly one company. For a go/no-go or
 remaining-work question, call `prego_payroll_prepare_readiness` first, then
 call `prego_payroll_downstream_status` for the same operating month.
+The two tools intentionally use different month formats:
+
+- `prego_payroll_prepare_readiness`: `yyyymm` in `YYYYMM`, for example `202608`;
+- `prego_payroll_downstream_status`: `operatingMonth` in `YYYY-MM`, for example `2026-08`.
+
 Downstream status is month-scoped and does not take a payroll type or sequence.
 For other requests, use:
 
@@ -32,6 +37,11 @@ Separate blockers, follow-up work, completed Prego records,
 and unknown external states. A generated banking file is not proof that a bank
 paid employees. The monthly operation checklist is not proof that a payroll
 result was confirmed; distinguish default events from linked completion state.
+If payroll type selection is still required, never turn a shared checklist's
+`DONE` state into a claim that a specific payroll result is confirmed. Say the
+selected payroll type's confirmation state is still unknown.
+Preserve each returned importance when prioritizing checklist items. Do not put
+`NORMAL` items under a high-risk heading solely because their due date passed.
 For go/no-go answers, present four separate sections: calculation readiness and
 its returned blockers; non-blocking data observations; Prego checklist items
 without a completion mark; and external states Prego cannot know. A raw missing
