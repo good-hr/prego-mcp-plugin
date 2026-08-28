@@ -510,6 +510,7 @@ export function checkPregoContract({
   return {
     toolCount: contract.tools.length,
     coverageGap: checkProvenance(registry, requireOpenApiDigest),
+    openApiSha256: registry.openapi?.sha256 ?? null,
   };
 }
 

@@ -102,6 +102,29 @@ test("runtime checker는 public OpenAPI URL을 거부한다", async () => {
   );
 });
 
+test("runtime checker는 loopback에서 시작한 redirect도 거부한다", async () => {
+  const server = createServer((_, response) => {
+    response.writeHead(302, { location: "https://api.prego.team/v3/api-docs" });
+    response.end();
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  try {
+    const address = server.address();
+    await assert.rejects(
+      checkPregoContractFromRuntime({
+        frontendRoot,
+        backendRoot,
+        openApiUrl: `http://127.0.0.1:${address.port}/v3/api-docs`,
+      }),
+      /redirect는 허용하지 않습니다/,
+    );
+  } finally {
+    await new Promise((resolve, reject) =>
+      server.close((error) => (error ? reject(error) : resolve())),
+    );
+  }
+});
+
 test("OpenAPI artifact는 object key 순서와 무관하게 정규화한다", () => {
   assert.deepEqual(
     canonicalizeOpenApi({ z: { b: 2, a: 1 }, a: [{ d: 4, c: 3 }] }),

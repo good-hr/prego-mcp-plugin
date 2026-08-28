@@ -1,13 +1,15 @@
 #!/usr/bin/env node
 
-import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { assertFullOpenApiArtifact } from "./check-prego-contract.mjs";
+import {
+  assertFullOpenApiArtifact,
+  checkPregoContract,
+} from "./check-prego-contract.mjs";
 
 const PLUGIN_ROOT = resolve(fileURLToPath(new URL("..", import.meta.url)));
 
@@ -64,7 +66,13 @@ export async function checkPregoContractFromRuntime({
   openApiUrl,
 }) {
   const url = requireLoopback(openApiUrl);
-  const response = await fetch(url, { signal: AbortSignal.timeout(30_000) });
+  const response = await fetch(url, {
+    redirect: "manual",
+    signal: AbortSignal.timeout(30_000),
+  });
+  if (response.status >= 300 && response.status < 400) {
+    throw new Error("OpenAPI test runtime redirect는 허용하지 않습니다");
+  }
   if (!response.ok) {
     throw new Error(`OpenAPI test runtime 요청 실패: HTTP ${response.status}`);
   }
@@ -78,22 +86,21 @@ export async function checkPregoContractFromRuntime({
       mode: 0o600,
     });
     assertFullOpenApiArtifact(artifact);
-    execFileSync(
-      process.execPath,
-      [
-        "scripts/check-prego-contract.mjs",
-        "--frontend-root",
-        frontendRoot,
-        "--backend-root",
-        backendRoot,
-        "--openapi",
-        artifact,
-        "--require-openapi-digest",
-      ],
-      { cwd: PLUGIN_ROOT, encoding: "utf8", stdio: "inherit" },
-    );
+    const expectedSha256 = createHash("sha256")
+      .update(canonicalDocument)
+      .digest("hex");
+    const result = checkPregoContract({
+      frontendRoot,
+      backendRoot,
+      openApi: artifact,
+      requireOpenApiDigest: true,
+    });
+    if (result.openApiSha256 !== expectedSha256) {
+      throw new Error("FE registry OpenAPI digest가 runtime artifact와 다릅니다");
+    }
+    process.stdout.write(`Prego pilot contract OK: ${result.toolCount} tools\n`);
     return {
-      sha256: createHash("sha256").update(canonicalDocument).digest("hex"),
+      sha256: expectedSha256,
       pathCount: Object.keys(document.paths ?? {}).length,
       schemaCount: Object.keys(document.components?.schemas ?? {}).length,
     };
