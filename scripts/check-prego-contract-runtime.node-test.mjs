@@ -9,6 +9,7 @@ import { assertFullOpenApiArtifact } from "./check-prego-contract.mjs";
 import {
   canonicalizeOpenApi,
   checkPregoContractFromRuntime,
+  requireLoopback,
 } from "./check-prego-contract-runtime.mjs";
 
 // Negative cases fail before either checkout is read.
@@ -99,6 +100,12 @@ test("runtime checker는 public OpenAPI URL을 거부한다", async () => {
       openApiUrl: "https://api.prego.team/v3/api-docs",
     }),
     /loopback 테스트 런타임/,
+  );
+});
+
+test("runtime checker는 bracketed IPv6 loopback을 허용한다", () => {
+  assert.doesNotThrow(() =>
+    requireLoopback("http://[::1]:8080/v3/api-docs"),
   );
 });
 

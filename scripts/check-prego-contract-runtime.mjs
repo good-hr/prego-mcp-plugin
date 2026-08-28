@@ -34,9 +34,9 @@ function parseArguments(args) {
   return result;
 }
 
-function requireLoopback(urlText) {
+export function requireLoopback(urlText) {
   const url = new URL(urlText);
-  const allowedHosts = new Set(["127.0.0.1", "::1", "localhost"]);
+  const allowedHosts = new Set(["127.0.0.1", "::1", "[::1]", "localhost"]);
   if (!allowedHosts.has(url.hostname)) {
     throw new Error(
       "OpenAPI는 공개 endpoint가 아닌 loopback 테스트 런타임에서만 가져올 수 있습니다",
