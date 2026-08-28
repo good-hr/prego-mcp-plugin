@@ -4,7 +4,7 @@ Prego의 인사·급여 데이터를 ChatGPT, Codex, Claude, Gemini CLI에서 �
 
 ## 제공 스킬
 
-- `company-briefing`: 대표·인사 총괄을 위한 인력·HR 운영 브리핑
+- `company-briefing`: 대표·인사 총괄을 위한 인력·인사 기준정보·HR 운영 브리핑
 - `workforce-reporting`: 조직·직위·직무 인원현황 보고서와 인원·인건비 변화 분석
 - `hr-control-tower`: 인사 총괄의 위험·영향 요약과 운영 담당자의 대상·후속 화면
 - `payroll-operations`: 급여 준비, 월 운영 체크리스트, 개인 급여 차이 검토

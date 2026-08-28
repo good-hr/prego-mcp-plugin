@@ -30,7 +30,9 @@ For other requests, use:
   selected employees.
 
 When a pay type or sequence is ambiguous, show the returned candidates and ask
-the user to choose. Never guess, enumerate, or scan pay sequences or employees.
+the user to choose. Do not call a selection-specific tool until the user has
+chosen, and do not label a candidate as recommended unless the tool explicitly
+returns that meaning. Never guess, enumerate, or scan pay sequences or employees.
 Use only selections and people returned by discovery tools; if a confirmed
 selection is not discoverable, stop and label that evidence unavailable.
 Separate blockers, follow-up work, completed Prego records,
@@ -53,9 +55,9 @@ calculation provenance; do not invent a business cause.
 
 For an HR leader, summarize blockers and affected scope. For a payroll operator,
 show the exact selection, target, state, and next action. This skill never
-calculates, confirms, changes, or retries payroll. Preserve returned handoffs,
-but label a handoff as a general screen when it does not restore the employee
-or draft state.
+calculates, confirms, changes, or retries payroll. Include the returned handoff
+for every completed tool call, even in a short answer, but label it as a general
+screen when it does not restore the employee or draft state.
 
 If any result has `dataPolicy.truncated: true`, state that the review is based
 on limited evidence and provide its handoff for the full view.
