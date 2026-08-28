@@ -14,6 +14,9 @@ gaps.
 Call `prego_company_context`, resolve the requested scope, then call
 `prego_workforce_snapshot` for the requested as-of date. If the user requests
 a comparison, call it once for each of the two dates.
+Unless the user requests another population, keep `includeIdle: false` and the
+tool's default hierarchy levels. Report the returned population, idle scope,
+hierarchy levels, and as-of date as part of the report scope.
 Use the fewest snapshots needed: one call returns organization, position, job,
 and employment charts for its requested hierarchy levels. Do not enumerate
 level combinations.

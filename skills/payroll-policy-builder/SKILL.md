@@ -13,21 +13,27 @@ gaps.
 
 Call `prego_company_context` and resolve one company, effective month,
 payment-item classification, target role codes, and amounts. Use `YYYY-MM` for
-the effective month. If the user omits it, use the current business month for
-the read-only draft and state that assumption; do not stop only to ask for a
-month that can be changed before saving. Resolve the pay type and sequence with
+the policy preview's `yearMonth`. Use compact `YYYYMM` for
+`prego_payroll_prepare_readiness.yyyymm`; for example, the same month is
+`2026-08` in policy preview and `202608` in readiness. If the user omits it,
+use the current business month for the read-only draft and state that
+assumption; do not stop only to ask for a month that can be changed before
+saving. Resolve the pay type and sequence with
 `prego_payroll_prepare_readiness`; never ask the user for an opaque ID. Ask one
 short choice only when that tool returns multiple payroll selections.
 Then call `prego_payroll_policy_preview` without a formula to discover the
 available variables, functions, operators, and allowed duty codes. Then call `prego_person_list` and select at most five
 permission-visible samples whose returned `dutyCode` covers the target roles
 and a non-target role. Never scan or guess people. Call the preview again with
-the formula, a clear draft item code and name, and those sample IDs. A draft
-code and the default calculation order are preview inputs, not business
-blockers; label them as changeable and let validation report a conflict. In the formula, use the
-returned canonical variable expressions exactly; never invent a variable alias
-or helper function. Use only variables, functions, and operators returned by
-its catalog. The preview must validate the
+the formula, a clear draft item code and name, and those sample IDs. If the
+selected samples contain no permission-visible employee with a target-role
+`dutyCode`, do not call formula preview; return the exact draft and state that
+validation and target-role amount impact remain unverified. A draft code and
+the default calculation order are preview inputs, not business blockers; label
+them as changeable and let validation report a conflict. In the formula, use the returned canonical
+variable expressions exactly; never invent a variable alias or helper
+function. Use only variables, functions, and operators returned by its catalog.
+The preview must validate the
 formula against the supported payroll expression contract, report current
 Circuit readiness, run non-persistent sample tests, and return the selected
 samples' amount impact before any change. Never infer

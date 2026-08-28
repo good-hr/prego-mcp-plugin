@@ -11,6 +11,10 @@ description: "Brief a representative or HR leader on Prego workforce and operati
 2. Call `prego_workforce_snapshot`, `prego_hr_operations_summary`, and
    `prego_attendance_operations_summary` for aligned dates with `previewSize: 0`.
    Run these independent reads in parallel when the client supports it.
+   For the general executive headcount, keep the workforce tool's canonical
+   `includeIdle: false` population and default hierarchy levels. State the
+   returned population, as-of date, and hierarchy basis; change them only when
+   the user requests a different population or grouping.
 3. Do not call person list or lifecycle detail tools for a general briefing.
    Route an explicit task-priority, new-hire, or leaver question to
    `$hr-control-tower`.

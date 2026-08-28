@@ -87,3 +87,16 @@ node scripts/check-prego-contract.mjs \
 ```
 
 실제 OpenAPI digest 없이 실행한 검사는 로컬 구조 확인일 뿐 공개 배포 근거가 아니다.
+
+공개 API 문서를 켜지 않는다. 격리된 backend test runtime의 loopback
+`/v3/api-docs`만 사용한다. 전용 checker가 응답의 object key를 정규화한 임시
+artifact로 digest를 만들고, pilot-only OpenAPI나 공개 URL은 full provenance로
+받지 않는다. full proof에는 모든 pilot operation, pilot 밖 operation, schema가
+함께 있어야 한다.
+
+```sh
+node scripts/check-prego-contract-runtime.mjs \
+  --frontend-root "$GOOD_HR_FRONTEND_ROOT" \
+  --backend-root "$GOOD_HR_BACKEND_ROOT" \
+  --openapi-url "http://127.0.0.1:${OPENAPI_PORT}/v3/api-docs"
+```

@@ -13,6 +13,48 @@ function readJson(path) {
   return JSON.parse(readFileSync(path, "utf8"));
 }
 
+function assertPluginManifest() {
+  const manifest = readJson(join(PLUGIN_ROOT, ".codex-plugin", "plugin.json"));
+  assert.match(
+    manifest.version ?? "",
+    /^\d+\.\d+\.\d+\+codex\.\d{14}$/,
+    "plugin version은 release마다 식별 가능한 semver+codex timestamp여야 합니다",
+  );
+  assert.ok(
+    (manifest.interface?.defaultPrompt?.length ?? 0) <= 3,
+    "plugin defaultPrompt는 Codex가 지원하는 최대 3개를 넘을 수 없습니다",
+  );
+}
+
+function assertSkillInputConventions() {
+  const readSkill = (id) =>
+    readFileSync(join(PLUGIN_ROOT, "skills", id, "SKILL.md"), "utf8");
+  const payrollOperations = readSkill("payroll-operations");
+  const payrollPolicy = readSkill("payroll-policy-builder");
+  const companyBriefing = readSkill("company-briefing");
+  const workforceReporting = readSkill("workforce-reporting");
+
+  assert.match(
+    payrollOperations,
+    /prego_payroll_prepare_readiness`:\s*`yyyymm` in `YYYYMM`/,
+  );
+  assert.match(
+    payrollOperations,
+    /prego_payroll_downstream_status`:\s*`operatingMonth` in `YYYY-MM`/,
+  );
+  assert.match(payrollPolicy, /prego_payroll_prepare_readiness\.yyyymm`/);
+  assert.match(
+    payrollPolicy,
+    /`2026-08` in policy preview and `202608` in readiness/,
+  );
+  assert.match(
+    payrollPolicy,
+    /selected samples contain no permission-visible employee with a target-role/,
+  );
+  assert.match(companyBriefing, /`includeIdle: false` population/);
+  assert.match(workforceReporting, /keep `includeIdle: false`/);
+}
+
 function parseArguments(args) {
   const result = {
     frontendRoot: resolve(PLUGIN_ROOT, "..", "good-hr-frontend"),
@@ -129,6 +171,58 @@ function frontendFoundationRecord(frontendRoot, openApi) {
         : [],
     ),
   );
+}
+
+function openApiDocument(path) {
+  if (/^https?:\/\//.test(path)) {
+    throw new Error(
+      "full OpenAPI provenance은 로컬에서 정규화한 artifact여야 합니다. runtime checker를 사용하세요",
+    );
+  }
+  return readJson(path);
+}
+
+/**
+ * The pilot document intentionally has only the MCP operations.  It is useful
+ * for a fast FE-only check, but must never become the evidence for a release
+ * registry that claims full OpenAPI provenance.
+ */
+export function assertFullOpenApiArtifact(path) {
+  const document = openApiDocument(path);
+  const schemaCount = Object.keys(document.components?.schemas ?? {}).length;
+  const operationIds = new Set(
+    Object.values(document.paths ?? {}).flatMap((pathItem) =>
+      Object.values(pathItem ?? {}).flatMap((operation) =>
+        operation?.operationId ? [operation.operationId] : [],
+      ),
+    ),
+  );
+  const pilotOperationIds = new Set(
+    readJson(CONTRACT_PATH).tools.map((tool) => tool.operationId),
+  );
+
+  assert.notEqual(
+    document.info?.title,
+    "Prego MCP pilot OpenAPI contract",
+    "pilot-openapi.json은 full OpenAPI provenance로 사용할 수 없습니다",
+  );
+  assert.ok(
+    [...pilotOperationIds].every((operationId) =>
+      operationIds.has(operationId),
+    ),
+    "full OpenAPI에는 모든 Prego pilot operationId가 필요합니다",
+  );
+  assert.ok(
+    [...operationIds].some(
+      (operationId) => !pilotOperationIds.has(operationId),
+    ),
+    "full OpenAPI에는 Prego pilot 밖의 operationId가 하나 이상 필요합니다",
+  );
+  assert.ok(
+    schemaCount > 0,
+    "full OpenAPI에는 components.schemas가 필요합니다",
+  );
+  return document;
 }
 
 function backendEnumRecords(backendRoot) {
@@ -301,6 +395,8 @@ export function checkPregoContract({
   openApi = null,
   requireOpenApiDigest = false,
 } = {}) {
+  assertPluginManifest();
+  assertSkillInputConventions();
   for (const [label, path] of [
     ["frontend", frontendRoot],
     ["backend", backendRoot],
@@ -342,6 +438,13 @@ export function checkPregoContract({
     },
     "company context는 App gate와 handoff가 없는 foundational tool이어야 합니다",
   );
+  if (requireOpenApiDigest) {
+    assert.ok(
+      openApi,
+      "full OpenAPI provenance에는 --openapi artifact가 필요합니다",
+    );
+    assertFullOpenApiArtifact(openApi);
+  }
   const registry = frontendRegistry(frontendRoot, openApi);
   const frontendCapabilityRecords = frontendRecords(registry).filter(
     (record) => record.kind === "capability",
@@ -407,6 +510,7 @@ export function checkPregoContract({
   return {
     toolCount: contract.tools.length,
     coverageGap: checkProvenance(registry, requireOpenApiDigest),
+    openApiSha256: registry.openapi?.sha256 ?? null,
   };
 }
 
