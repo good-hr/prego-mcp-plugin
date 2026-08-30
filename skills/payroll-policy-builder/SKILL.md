@@ -20,7 +20,9 @@ use the current business month for the read-only draft and state that
 assumption; do not stop only to ask for a month that can be changed before
 saving. Resolve the pay type and sequence with
 `prego_payroll_prepare_readiness`; never ask the user for an opaque ID. Ask one
-short choice only when that tool returns multiple payroll selections.
+short choice only when that tool returns multiple payroll selections. Stop
+there until the user chooses: do not recommend a candidate without an explicit
+returned marker or call the catalog, person list, or formula preview first.
 Then call `prego_payroll_policy_preview` without a formula to discover the
 available variables, functions, operators, and allowed duty codes. Then call `prego_person_list` and select at most five
 permission-visible samples whose returned `dutyCode` covers the target roles

@@ -1,6 +1,6 @@
 ---
 name: onboarding-import
-description: "Prepare and preflight official Prego employee and payroll onboarding Excel files from customer source spreadsheets. Use when an HR or implementation user asks to migrate, upload, or set up many employees in Prego."
+description: "Prepare and preflight official Prego employee and payroll onboarding Excel files from customer source spreadsheets. Use when an HR or implementation user asks to migrate, upload, or set up many employees in Prego, not to audit data already stored in Prego."
 ---
 
 # Prego onboarding import

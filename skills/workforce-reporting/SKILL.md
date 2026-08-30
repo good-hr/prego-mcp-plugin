@@ -17,6 +17,8 @@ a comparison, call it once for each of the two dates.
 Unless the user requests another population, keep `includeIdle: false` and the
 tool's default hierarchy levels. Report the returned population, idle scope,
 hierarchy levels, and as-of date as part of the report scope.
+Omit `orgLevel` and `jobLevel` when using their defaults; never send `0` as a
+default.
 Use the fewest snapshots needed: one call returns organization, position, job,
 and employment charts for its requested hierarchy levels. Do not enumerate
 level combinations.
@@ -25,7 +27,11 @@ reconciliation only. Never regroup people from names or infer a hierarchy.
 
 For a question about labor-cost change, resolve exactly one company. Use
 `prego_payroll_prepare_readiness` to present human-readable pay type and
-sequence candidates when the selection is not already explicit, then call
+sequence candidates when the selection is not already explicit. When it
+returns multiple candidates, ask the user to choose and do not call
+`prego_workforce_cost_bridge` until they do; never treat the first candidate as
+a default or recommendation without an explicit returned marker. Workforce
+snapshots may still be compared while waiting. Then call
 `prego_workforce_cost_bridge` for the selected current and comparison months. Present
 its payroll-population bridge separately from the workforce snapshot because
 payroll population and company headcount can differ. Both months must contain
