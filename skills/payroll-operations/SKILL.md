@@ -12,8 +12,9 @@ completion beyond the returned evidence. State uncertainty instead of filling
 gaps.
 
 Call `prego_company_context` and resolve exactly one company. For a go/no-go or
-remaining-work question, call `prego_payroll_prepare_readiness` first, then
-call `prego_payroll_downstream_status` for the same operating month.
+remaining-work question, call `prego_payroll_prepare_readiness` first and wait
+for its result, then call `prego_payroll_downstream_status` for the same
+operating month. Do not run these two calls in parallel.
 The two tools intentionally use different month formats:
 
 - `prego_payroll_prepare_readiness`: `yyyymm` in `YYYYMM`, for example `202608`;
