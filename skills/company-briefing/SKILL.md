@@ -1,6 +1,6 @@
 ---
 name: company-briefing
-description: "Brief a representative or HR leader on Prego workforce, HR master-data completeness, and operating signals. Use for executive requests such as '인사 브리핑', '우리 회사 인력 상황', or '사람들 정보가 잘 들어갔나', not today's task priorities."
+description: "Brief a representative or HR leader on Prego workforce, HR master-data completeness, product usage, and operating signals. Use for executive requests such as '인사 브리핑', '우리 회사 인력 상황', 'Prego를 잘 쓰고 있나', or '사람들 정보가 잘 들어갔나', not today's task priorities."
 ---
 
 # Company briefing
@@ -8,19 +8,20 @@ description: "Brief a representative or HR leader on Prego workforce, HR master-
 ## Workflow
 
 1. Call `prego_company_context` and resolve the requested company scope.
-2. Choose one aggregate path:
+2. Choose one aggregate path. Run independent reads in parallel when the client
+   supports it:
    - General executive briefing: call `prego_workforce_snapshot`,
      `prego_hr_operations_summary`, and
      `prego_attendance_operations_summary` for aligned dates with
-     `previewSize: 0`.
+     `previewSize: 0`. Keep the canonical `includeIdle: false` population.
+     Preserve the default hierarchy levels and state the returned population,
+     as-of date, and hierarchy basis; change them only when the user requests a
+     different population or grouping. Omit `orgLevel` and `jobLevel` to use
+     their defaults; never send `0` as a default.
    - HR master-data completeness: call only `prego_workforce_snapshot` and
      `prego_hr_operations_summary` with `previewSize: 0`; do not call attendance.
-   Run independent reads in parallel when the client supports it.
-   For the general executive headcount, keep the workforce tool's canonical
-   `includeIdle: false` population and default hierarchy levels. State the
-   returned population, as-of date, and hierarchy basis; change them only when
-   the user requests a different population or grouping. Omit `orgLevel` and
-   `jobLevel` to use their defaults; never send `0` as a default.
+   - Prego product usage: call only `prego_hr_operations_summary` with
+     `previewSize: 0`; do not call workforce, attendance, lifecycle, or payroll.
 3. Do not call person list or lifecycle detail tools for a general briefing.
    Route an explicit task-priority, new-hire, or leaver question to
    `$hr-control-tower`.
@@ -58,6 +59,13 @@ present it separately from commute anomalies and recognized work time.
 
 Do not add qualitative labels without a returned benchmark. Put unsupported
 significance, cause, or priority under `Unknown`.
+
+For product usage, report only the returned feature-level observations.
+`activeUsers` and `uniqueUsers` are per metric or app; do not combine them,
+infer that they are the same people, or turn them into overall adoption.
+`monthlyOpens` measures opens, not work quality or business outcomes. Without a
+returned benchmark, keep overall adoption and dependence on particular users
+under `Unknown`.
 
 ## Output
 

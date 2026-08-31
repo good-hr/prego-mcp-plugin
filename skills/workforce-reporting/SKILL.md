@@ -51,7 +51,8 @@ changed, the largest returned drivers, and what needs a decision, monitoring,
 or more evidence. Treat data drivers as evidence, not business causes.
 
 If the tool cannot return a requested hierarchy or comparison, label it as
-unavailable instead of approximating it. Preserve every returned Prego handoff.
+unavailable instead of approximating it. Include every returned Prego handoff
+URL verbatim in the final answer; label a general screen as general.
 
 If any result has `dataPolicy.truncated: true`, state that the report uses
 limited evidence and provide its handoff for the full view.

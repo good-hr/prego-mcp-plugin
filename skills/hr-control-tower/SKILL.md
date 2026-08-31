@@ -31,11 +31,14 @@ For a new-hire or leaver question, call `prego_person_lifecycle_readiness` with
 the matching lifecycle and explicit date range. Report each returned check as
 `READY`, `MISSING`, `NOT_APPLICABLE`, or `UNKNOWN`. A missing permission,
 unsupported check, or absent source is `UNKNOWN`, never complete.
+Lifecycle `READY` covers only the checks returned by Prego. Account or asset
+recovery, government filing, actual payment, and other external completion stay
+`UNKNOWN` unless a tool explicitly returns their state.
 
 For an HR leader, summarize company and work-area risk, impact, and coverage.
 For an operator, show the returned targets, states, and next Prego screen.
 Do not expose names unless the user explicitly asks who is affected or requests
 person-level readiness.
 
-Do not approve, edit, close, or infer work. Return the responsible Prego screen
-from each tool without rebuilding its URL.
+Do not approve, edit, close, or infer work. Include the responsible Prego screen
+returned by each tool verbatim in the final answer.
