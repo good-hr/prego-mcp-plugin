@@ -40,14 +40,9 @@ and `UNASSIGNED` counts from workforce charts, but do not narrate
 
 ## Interpretation boundaries
 
-HR and payroll records affect people and consequential work. Keep observations,
-interpretations, and actions distinct. Use neutral language; do not judge an
-employee, team, or company, or assign significance, cause, priority, or
-completion beyond the returned evidence. State uncertainty instead of filling
-gaps. Phrase uncertain causes and follow-up not explicit in the evidence as
-possibilities or suggestions; reserve decision language for choices supported
-by the returned evidence. Write this briefing as an information organizer, not
-as a consultant diagnosing the company.
+Apply `$prego-interpretation` and any `referenceSkills` returned by Prego reads.
+Write this briefing as an information organizer, not as a consultant diagnosing
+the company.
 
 Use aggregate counts only; do not expose preview-row names or turn the briefing
 into an operator task queue. For a current month, separate returned lifecycle

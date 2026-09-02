@@ -9,6 +9,7 @@ import { fileURLToPath } from "node:url";
 const PLUGIN_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const CONTRACT_PATH = join(PLUGIN_ROOT, "contracts/pilot-tools.json");
 const FACADE_TOOLS = ["prego_capabilities", "prego_read", "prego_update"];
+const SHARED_SKILL_IDS = ["prego-interpretation"];
 const LEGACY_TOOL_PATTERN = /prego_(company_context|hr_operations_summary|attendance_operations_summary|person_lifecycle_readiness|person_list|onboarding_import_catalog|onboarding_import_preflight|workforce_snapshot|payroll_prepare_readiness|payroll_ledger|payroll_downstream_status|payroll_variance_review|payroll_policy_preview|workforce_cost_bridge)/;
 
 function readJson(path) {
@@ -108,11 +109,18 @@ function skillToolReferences(skillPath) {
 }
 
 function assertSkills(contract) {
+  const installedWorkflowSkillIds = pluginSkillIds().filter(
+    (id) => !SHARED_SKILL_IDS.includes(id),
+  );
   assert.deepEqual(
-    pluginSkillIds(),
+    installedWorkflowSkillIds,
     contract.skills.map((skill) => skill.id).sort(),
     "plugin skill 목록이 facade contract와 다릅니다",
   );
+  for (const id of SHARED_SKILL_IDS) {
+    const source = readFileSync(join(PLUGIN_ROOT, "skills", id, "SKILL.md"), "utf8");
+    assert.match(source, /referenceSkills/, `${id}: returned referenceSkills를 안내해야 합니다`);
+  }
   const allowedCapabilityIds = new Set(
     contract.capabilities.map((capability) => capability.id),
   );
@@ -137,6 +145,8 @@ function assertSkills(contract) {
       skill.capabilities.every((id) => source.includes(`\`${id}\``)),
       `${skill.id}: 사용 capability ID를 skill에 명시해야 합니다`,
     );
+    assert.match(source, /\$prego-interpretation/, `${skill.id}: 공통 해석 skill을 참조해야 합니다`);
+    assert.match(source, /referenceSkills/, `${skill.id}: returned referenceSkills를 안내해야 합니다`);
   }
   const policy = readFileSync(
     join(PLUGIN_ROOT, "skills", "payroll-policy-builder", "SKILL.md"),
@@ -285,6 +295,7 @@ export function checkPregoContract({
   }
   const registry = assertFrontendRegistry(contract, frontendRoot, openApi);
   assertBackendFacade(backendRoot, contract);
+  execFileSync(process.execPath, [join(PLUGIN_ROOT, "scripts/sync-response-skills.mjs"), "--backend-root", backendRoot, "--check"], { stdio: "pipe" });
   return {
     capabilityCount: contract.capabilities.length - 1,
     coverageGap: checkProvenance(registry, requireOpenApiDigest),

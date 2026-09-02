@@ -5,13 +5,7 @@ description: "Create detailed Prego workforce reports and explain sourced headco
 
 # Workforce reporting
 
-HR and payroll records affect people and consequential work. Keep observations,
-interpretations, and actions distinct. Use neutral language; do not judge an
-employee, team, or company, or assign significance, cause, priority, or
-completion beyond the returned evidence. State uncertainty instead of filling
-gaps. Phrase uncertain causes and follow-up not explicit in the evidence as
-possibilities or suggestions; reserve decision language for choices supported
-by the returned evidence.
+Apply `$prego-interpretation` and any `referenceSkills` returned by Prego reads.
 
 Call `prego_capabilities`, resolve the requested scope from its context, then
 use `prego_read` with `capabilityId`, `scope`, and capability-specific

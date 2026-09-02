@@ -5,23 +5,19 @@ description: "Draft, validate, and optionally save a supported Prego payroll all
 
 # Payroll policy builder
 
-HR and payroll records affect people and consequential work. Keep observations,
-interpretations, and actions distinct. Use neutral language; do not judge an
-employee, team, or company, or assign significance, cause, priority, or
-completion beyond the returned evidence. State uncertainty instead of filling
-gaps. Phrase uncertain causes and follow-up not explicit in the evidence as
-possibilities or suggestions; reserve decision language for choices supported
-by the returned evidence.
+Apply `$prego-interpretation` and the payroll guidance in any `referenceSkills`
+returned by Prego reads.
 
 Call `prego_capabilities` and resolve one company from its context. It is also
 the permission-filtered catalog: use `prego_read` with `capabilityId`, `scope`,
 and capability-specific `arguments`, and never invent an ID or call one it did
 not return. Use `YYYY-MM` for `payroll.policy.preview.read`'s `yearMonth` and
 compact `YYYYMM` for `payroll.prepare.readiness.read`'s `yyyymm`; for example,
-the same month is `2026-08` in preview and `202608` in readiness. If the user
-omits it, use the current business month for the non-persistent draft and state
-that assumption; do not stop only to ask for a month that can be changed before
-saving.
+the same month is `2026-08` in preview and `202608` in readiness. Use an
+explicit user month or explicit company business rule first. Otherwise, for a
+non-persistent draft, use the company-local previous month on days 1–14 and the
+current month on days 15 onward, and disclose that assumption. Do not infer a
+write effective date.
 
 Resolve the pay type and sequence with `payroll.prepare.readiness.read`; never
 ask the user for an opaque ID. Ask one short choice only when it returns
