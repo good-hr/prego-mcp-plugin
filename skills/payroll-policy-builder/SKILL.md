@@ -1,6 +1,6 @@
 ---
 name: payroll-policy-builder
-description: "Draft, validate, and optionally save a supported Prego payroll allowance formula. Use when an HR leader or payroll operator is preparing a payment rule such as a role allowance."
+description: "Draft and validate a Prego allowance formula, or edit supported payment and deduction settings. Use when an HR leader or payroll operator is preparing an allowance rule or payroll item change."
 ---
 
 # Payroll policy builder
@@ -18,6 +18,13 @@ explicit user month or explicit company business rule first. Otherwise, for a
 non-persistent draft, use the company-local previous month on days 1–14 and the
 current month on days 15 onward, and disclose that assumption. Do not infer a
 write effective date.
+
+For a deduction-setting request, read `payroll.deduction-item.list.read` and
+resolve the requested item and changes. Preserve unchanged fields when editing;
+on an explicit save request use `payroll.deduction-item.create` or
+`payroll.deduction-item.update` with the same destructive-tool confirmation and
+write limits below. The payment-formula preview is not a deduction simulation;
+do not claim a deduction was sample-tested with it.
 
 Resolve the pay type and sequence with `payroll.prepare.readiness.read`; never
 ask the user for an opaque ID. Ask one short choice only when it returns

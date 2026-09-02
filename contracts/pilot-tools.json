@@ -52,7 +52,7 @@
     },
     {
       "id": "payroll-policy-builder",
-      "capabilities": ["payroll.prepare.readiness.read", "payroll.policy.preview.read", "person.list.read", "payroll.payment-item.list.read", "payroll.payment-item.create", "payroll.payment-item.update"]
+      "capabilities": ["payroll.prepare.readiness.read", "payroll.policy.preview.read", "person.list.read", "payroll.payment-item.list.read", "payroll.payment-item.create", "payroll.payment-item.update", "payroll.deduction-item.list.read", "payroll.deduction-item.create", "payroll.deduction-item.update"]
     },
     {
       "id": "onboarding-import",
