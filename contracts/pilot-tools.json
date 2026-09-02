@@ -44,7 +44,7 @@
     },
     {
       "id": "hr-control-tower",
-      "capabilities": ["hr.operations.summary.read", "hr.contract-expiry.read", "attendance.operations.summary.read", "attendance.leave.balance-history.read", "attendance.person.daily-records.read", "person.lifecycle.readiness.read"]
+      "capabilities": ["hr.operations.summary.read", "hr.contract-expiry.read", "attendance.operations.summary.read", "attendance.leave.balance-history.read", "attendance.person.daily-records.read", "person.lifecycle.readiness.read", "person.list.read"]
     },
     {
       "id": "payroll-operations",

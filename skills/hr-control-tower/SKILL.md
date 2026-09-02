@@ -39,7 +39,8 @@ For expiring contracts, use `hr.contract-expiry.read`; request a target page onl
 when the user asks who. Contract end dates do not establish renewal or termination.
 For one employee's leave balance or history, use `attendance.leave.balance-history.read`;
 for their dated work records, use `attendance.person.daily-records.read`. Resolve
-the employee first; an aggregate question is not a reason to fetch personal records.
+the employee with `person.list.read`, asking the user if multiple people match;
+an aggregate question is not a reason to fetch personal records.
 
 For an operator, show the returned targets, states, and next Prego screen.
 Do not expose names unless the user explicitly asks who is affected or requests
