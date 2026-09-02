@@ -13,9 +13,11 @@ gaps. Phrase uncertain causes and follow-up not explicit in the evidence as
 possibilities or suggestions; reserve decision language for choices supported
 by the returned evidence.
 
-Call `prego_company_context`, resolve the requested scope, then call
-`prego_workforce_snapshot` for the requested as-of date. If the user requests
-a comparison, call it once for each of the two dates.
+Call `prego_capabilities`, resolve the requested scope from its context, then
+use `prego_read` with `capabilityId`, `scope`, and capability-specific
+`arguments`. Never invent an ID or call one that was not returned. Read
+`workforce.snapshot.read` for the requested as-of date. If the user requests a
+comparison, read it once for each of the two dates.
 Unless the user requests another population, keep `includeIdle: false` and the
 tool's default hierarchy levels. Report the returned population, idle scope,
 hierarchy levels, and as-of date as part of the report scope.
@@ -28,13 +30,13 @@ Use the returned hierarchy labels, counts, totals, unclassified counts, and
 reconciliation only. Never regroup people from names or infer a hierarchy.
 
 For a question about labor-cost change, resolve exactly one company. Use
-`prego_payroll_prepare_readiness` to present human-readable pay type and
+`payroll.prepare.readiness.read` to present human-readable pay type and
 sequence candidates when the selection is not already explicit. When it
 returns multiple candidates, ask the user to choose and do not call
-`prego_workforce_cost_bridge` until they do; never treat the first candidate as
+`workforce.cost.bridge.read` until they do; never treat the first candidate as
 a default or recommendation without an explicit returned marker. Workforce
 snapshots may still be compared while waiting. Then call
-`prego_workforce_cost_bridge` for the selected current and comparison months. Present
+`workforce.cost.bridge.read` for the selected current and comparison months. Present
 its payroll-population bridge separately from the workforce snapshot because
 payroll population and company headcount can differ. Both months must contain
 confirmed payroll rows; missing rows mean the comparison is unavailable, not

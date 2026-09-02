@@ -1,186 +1,56 @@
 {
-  "version": 1,
-  "tools": [
-    {
-      "kind": "foundational",
-      "enum": "COMPANY_CONTEXT",
-      "tool": "prego_company_context",
-      "capabilityId": "company.context.read",
-      "operationId": "getPregoMcpCompanyContext"
-    },
-    {
-      "kind": "capability",
-      "enum": "HR_OPERATIONS_SUMMARY",
-      "tool": "prego_hr_operations_summary",
-      "capabilityId": "hr.operations.summary.read",
-      "appCode": "hr-operations",
-      "operationId": "getHrOperationsHome",
-      "handoffPath": "/app/hr"
-    },
-    {
-      "kind": "capability",
-      "enum": "ATTENDANCE_OPERATIONS_SUMMARY",
-      "tool": "prego_attendance_operations_summary",
-      "capabilityId": "attendance.operations.summary.read",
-      "appCode": "attendance-operations",
-      "operationId": "getAttendanceOperationsHome",
-      "handoffPath": "/app/attendance"
-    },
-    {
-      "kind": "capability",
-      "enum": "PERSON_LIFECYCLE_READINESS",
-      "tool": "prego_person_lifecycle_readiness",
-      "capabilityId": "person.lifecycle.readiness.read",
-      "appCode": "hr-operations",
-      "operationId": "getHrOperationsHomeDetails",
-      "handoffPath": "/app/hr"
-    },
-    {
-      "kind": "capability",
-      "enum": "PERSON_LIST",
-      "tool": "prego_person_list",
-      "capabilityId": "person.list.read",
-      "appCode": "person-list",
-      "operationId": "listPersonsByCompany",
-      "handoffPath": "/app/person-list"
-    },
-    {
-      "kind": "capability",
-      "enum": "ONBOARDING_IMPORT_CATALOG",
-      "tool": "prego_onboarding_import_catalog",
-      "capabilityId": "onboarding.import.catalog.read",
-      "appCode": "onboarding-setting",
-      "operationId": "downloadPersonMasterUploadTemplate",
-      "handoffPath": "/app/setting/onboarding-setting"
-    },
-    {
-      "kind": "capability",
-      "enum": "ONBOARDING_IMPORT_PREFLIGHT",
-      "tool": "prego_onboarding_import_preflight",
-      "capabilityId": "onboarding.import.preflight.read",
-      "appCode": "onboarding-setting",
-      "operationId": "downloadPersonMasterUploadTemplate",
-      "handoffPath": "/app/setting/onboarding-setting"
-    },
-    {
-      "kind": "capability",
-      "enum": "WORKFORCE_SNAPSHOT",
-      "tool": "prego_workforce_snapshot",
-      "capabilityId": "workforce.snapshot.read",
-      "appCode": "hr-operations",
-      "operationId": "getSummary",
-      "handoffPath": "/hr-index"
-    },
-    {
-      "kind": "capability",
-      "enum": "PAYROLL_PREPARE_READINESS",
-      "tool": "prego_payroll_prepare_readiness",
-      "capabilityId": "payroll.prepare.readiness.read",
-      "appCode": "payroll-prepare",
-      "operationId": "getPayrollPrepareReadinessSummary",
-      "handoffPath": "/app/payroll/payroll-prepare"
-    },
-    {
-      "kind": "capability",
-      "enum": "PAYROLL_LEDGER",
-      "tool": "prego_payroll_ledger",
-      "capabilityId": "payroll.ledger.read",
-      "appCode": "payroll-ledger",
-      "operationId": "getPayrollLedger",
-      "handoffPath": "/app/payroll/payroll-ledger"
-    },
-    {
-      "kind": "capability",
-      "enum": "PAYROLL_DOWNSTREAM_STATUS",
-      "tool": "prego_payroll_downstream_status",
-      "capabilityId": "payroll.downstream.status.read",
-      "appCode": "payroll-operation",
-      "operationId": "listPayrollOperationEvents",
-      "handoffPath": "/app/payroll"
-    },
-    {
-      "kind": "capability",
-      "enum": "PAYROLL_VARIANCE_REVIEW",
-      "tool": "prego_payroll_variance_review",
-      "capabilityId": "payroll.variance.review.read",
-      "appCode": "payroll-forensic",
-      "operationId": "getMonthlyAnalysis",
-      "handoffPath": "/app/payroll/payroll-forensic"
-    },
-    {
-      "kind": "capability",
-      "enum": "PAYROLL_POLICY_PREVIEW",
-      "tool": "prego_payroll_policy_preview",
-      "capabilityId": "payroll.policy.preview.read",
-      "appCode": "payroll-setting",
-      "operationId": "getPaymentItemFormulaEditorCatalog",
-      "handoffPath": "/app/setting/payroll-setting"
-    },
-    {
-      "kind": "capability",
-      "enum": "WORKFORCE_COST_BRIDGE",
-      "tool": "prego_workforce_cost_bridge",
-      "capabilityId": "workforce.cost.bridge.read",
-      "appCode": "payroll-ledger",
-      "operationId": "getPayrollLedger",
-      "handoffPath": "/app/payroll/payroll-ledger"
-    }
+  "version": 2,
+  "mcpTools": [
+    { "tool": "prego_capabilities", "effect": "discovery", "destructive": false },
+    { "tool": "prego_read", "effect": "read", "destructive": false },
+    { "tool": "prego_update", "effect": "update", "destructive": true }
+  ],
+  "capabilities": [
+    { "id": "company.context.read", "effect": "read", "foundation": true },
+    { "id": "hr.operations.summary.read", "effect": "read" },
+    { "id": "attendance.operations.summary.read", "effect": "read" },
+    { "id": "person.lifecycle.readiness.read", "effect": "read" },
+    { "id": "person.list.read", "effect": "read" },
+    { "id": "onboarding.import.catalog.read", "effect": "read" },
+    { "id": "onboarding.import.preflight.read", "effect": "read" },
+    { "id": "workforce.snapshot.read", "effect": "read" },
+    { "id": "payroll.prepare.readiness.read", "effect": "read" },
+    { "id": "payroll.ledger.read", "effect": "read" },
+    { "id": "payroll.downstream.status.read", "effect": "read" },
+    { "id": "payroll.variance.review.read", "effect": "read" },
+    { "id": "payroll.policy.preview.read", "effect": "read" },
+    { "id": "workforce.cost.bridge.read", "effect": "read" },
+    { "id": "payroll.payment-item.list.read", "effect": "read" },
+    { "id": "payroll.payment-item.create", "effect": "update" },
+    { "id": "payroll.payment-item.update", "effect": "update" },
+    { "id": "payroll.deduction-item.list.read", "effect": "read" },
+    { "id": "payroll.deduction-item.create", "effect": "update" },
+    { "id": "payroll.deduction-item.update", "effect": "update" }
   ],
   "skills": [
     {
       "id": "company-briefing",
-      "tools": [
-        "prego_company_context",
-        "prego_workforce_snapshot",
-        "prego_hr_operations_summary",
-        "prego_attendance_operations_summary"
-      ]
+      "capabilities": ["hr.operations.summary.read", "attendance.operations.summary.read", "workforce.snapshot.read"]
     },
     {
       "id": "workforce-reporting",
-      "tools": [
-        "prego_company_context",
-        "prego_workforce_snapshot",
-        "prego_payroll_prepare_readiness",
-        "prego_workforce_cost_bridge"
-      ]
+      "capabilities": ["workforce.snapshot.read", "payroll.prepare.readiness.read", "workforce.cost.bridge.read"]
     },
     {
       "id": "hr-control-tower",
-      "tools": [
-        "prego_company_context",
-        "prego_hr_operations_summary",
-        "prego_attendance_operations_summary",
-        "prego_person_lifecycle_readiness"
-      ]
+      "capabilities": ["hr.operations.summary.read", "attendance.operations.summary.read", "person.lifecycle.readiness.read"]
     },
     {
       "id": "payroll-operations",
-      "tools": [
-        "prego_company_context",
-        "prego_payroll_prepare_readiness",
-        "prego_payroll_downstream_status",
-        "prego_payroll_variance_review",
-        "prego_person_list",
-        "prego_payroll_ledger"
-      ]
+      "capabilities": ["payroll.prepare.readiness.read", "payroll.downstream.status.read", "payroll.variance.review.read", "person.list.read", "payroll.ledger.read"]
     },
     {
       "id": "payroll-policy-builder",
-      "tools": [
-        "prego_company_context",
-        "prego_payroll_prepare_readiness",
-        "prego_payroll_policy_preview",
-        "prego_person_list"
-      ]
+      "capabilities": ["payroll.prepare.readiness.read", "payroll.policy.preview.read", "person.list.read", "payroll.payment-item.list.read", "payroll.payment-item.create", "payroll.payment-item.update"]
     },
     {
       "id": "onboarding-import",
-      "tools": [
-        "prego_company_context",
-        "prego_onboarding_import_catalog",
-        "prego_onboarding_import_preflight"
-      ]
+      "capabilities": ["onboarding.import.catalog.read", "onboarding.import.preflight.read"]
     }
   ]
 }

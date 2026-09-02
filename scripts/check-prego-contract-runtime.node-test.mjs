@@ -5,7 +5,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 
-import { assertFullOpenApiArtifact } from "./check-prego-contract.mjs";
+import {
+  assertExactCapabilityPairs,
+  assertFullOpenApiArtifact,
+} from "./check-prego-contract.mjs";
 import {
   canonicalizeOpenApi,
   checkPregoContractFromRuntime,
@@ -28,9 +31,9 @@ function fullDocument({ includeNonPilot = true } = {}) {
     openapi: "3.0.3",
     info: { title: "Good HR API", version: "1" },
     paths: Object.fromEntries([
-      ...contract.tools.map((tool, index) => [
+      ...contract.capabilities.map((capability, index) => [
         `/api/pilot/${index}`,
-        { get: { operationId: tool.operationId } },
+        { get: { operationId: `getPilotCapability${index}` } },
       ]),
       ...(includeNonPilot
         ? [["/api/v1/extra", { get: { operationId: "getNonPilotOperation" } }]]
@@ -73,17 +76,22 @@ test("runtime checker는 pilot 크기의 OpenAPI를 full provenance로 거부한
   });
 });
 
-test("full provenance는 pilot operation 전체와 pilot 밖 operation을 요구한다", () => {
+test("full provenance는 schema와 둘 이상의 operation을 요구한다", () => {
   const directory = mkdtempSync(join(tmpdir(), "prego-openapi-contract-"));
   const artifact = join(directory, "openapi.json");
   try {
     writeFileSync(
       artifact,
-      JSON.stringify(fullDocument({ includeNonPilot: false })),
+      JSON.stringify({
+        ...fullDocument({ includeNonPilot: false }),
+        paths: Object.fromEntries(
+          Object.entries(fullDocument({ includeNonPilot: false }).paths).slice(0, 1),
+        ),
+      }),
     );
     assert.throws(
       () => assertFullOpenApiArtifact(artifact),
-      /pilot 밖의 operationId/,
+      /둘 이상의 operation/,
     );
     writeFileSync(artifact, JSON.stringify(fullDocument()));
     assert.doesNotThrow(() => assertFullOpenApiArtifact(artifact));
@@ -136,5 +144,20 @@ test("OpenAPI artifact는 object key 순서와 무관하게 정규화한다", ()
   assert.deepEqual(
     canonicalizeOpenApi({ z: { b: 2, a: 1 }, a: [{ d: 4, c: 3 }] }),
     { a: [{ c: 3, d: 4 }], z: { a: 1, b: 2 } },
+  );
+});
+
+test("capability contract는 extra capability drift를 거부한다", () => {
+  assert.throws(
+    () =>
+      assertExactCapabilityPairs(
+        "test registry",
+        [{ id: "workforce.snapshot.read", effect: "read" }],
+        [
+          { id: "workforce.snapshot.read", effect: "read" },
+          { id: "payroll.payment-item.create", effect: "update" },
+        ],
+      ),
+    /capabilityId\/effect 집합이 plugin contract와 다릅니다/,
   );
 });

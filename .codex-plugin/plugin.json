@@ -10,14 +10,14 @@
   "interface": {
     "displayName": "Prego",
     "shortDescription": "Review Prego company, workforce, and payroll signals.",
-    "longDescription": "Brief leaders on workforce and HR signals, create detailed workforce reports, guide HR and payroll operations, prepare official onboarding workbooks, and test supported payroll policy drafts with Prego evidence and truthful screen handoffs.",
+    "longDescription": "Brief leaders on workforce and HR signals, create detailed workforce reports, guide HR and payroll operations, prepare official onboarding workbooks, and validate or save supported payroll items with Prego evidence and truthful screen handoffs.",
     "developerName": "Prego",
     "category": "Productivity",
     "capabilities": [
       "Executive HR briefing",
       "Workforce reporting",
       "HR and payroll operations",
-      "Payroll policy preview",
+      "Payroll policy validation and setup",
       "Employee onboarding workbook preparation",
       "Prego direct links"
     ],
