@@ -26,6 +26,10 @@ on an explicit save request use `payroll.deduction-item.create` or
 write limits below. The payment-formula preview is not a deduction simulation;
 do not claim a deduction was sample-tested with it.
 
+For a deduction-only list or requested update, stop after that flow. The
+selection and sample-preview workflow below applies only to a payment-formula
+draft or validation request.
+
 Resolve the pay type and sequence with `payroll.prepare.readiness.read`; never
 ask the user for an opaque ID. Ask one short choice only when it returns
 multiple payroll selections. Stop there until the user chooses: do not

@@ -221,10 +221,16 @@ function assertFrontendRegistry(contract, frontendRoot, openApi) {
     app.capabilities.map((capability) => ({ ...capability, appCode: app.appCode, foundation: app.foundation })),
   );
   const businessRecords = records.filter((record) => !record.foundation);
+  const foundationRecords = records.filter((record) => record.foundation);
   assertExactCapabilityPairs(
     "FE registry",
     contract.capabilities.filter((capability) => !capability.foundation),
     businessRecords,
+  );
+  assertExactCapabilityPairs(
+    "FE registry foundation",
+    contract.capabilities.filter((capability) => capability.foundation),
+    foundationRecords,
   );
   for (const record of businessRecords) {
     assert.ok(record.operation?.operationId, `FE registry의 ${record.id}에 operationId가 없습니다`);

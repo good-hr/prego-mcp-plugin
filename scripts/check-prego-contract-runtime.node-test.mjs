@@ -161,3 +161,15 @@ test("capability contract는 extra capability drift를 거부한다", () => {
     /capabilityId\/effect 집합이 plugin contract와 다릅니다/,
   );
 });
+
+test("foundation capability의 effect drift를 거부한다", () => {
+  assert.throws(
+    () =>
+      assertExactCapabilityPairs(
+        "FE registry foundation",
+        [{ id: "company.context.read", effect: "read" }],
+        [{ id: "company.context.read", effect: "update" }],
+      ),
+    /capabilityId\/effect 집합이 plugin contract와 다릅니다/,
+  );
+});
