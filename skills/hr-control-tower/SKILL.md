@@ -1,6 +1,6 @@
 ---
 name: hr-control-tower
-description: "Prioritize work that HR should handle and check new-hire or leaver readiness. Use for requests such as '오늘 HR팀이 먼저 처리할 일', incomplete onboarding, or offboarding follow-up, not a general executive briefing."
+description: "Prioritize HR work, check new-hire or leaver readiness and contract expiry, and answer one employee's leave or attendance-record questions. Use for daily HR operations and follow-up, not a general executive briefing."
 ---
 
 # HR control tower
@@ -35,6 +35,12 @@ recovery, government filing, actual payment, and other external completion stay
 `UNKNOWN` unless a tool explicitly returns their state.
 
 For an HR leader, summarize company and work-area risk, impact, and coverage.
+For expiring contracts, use `hr.contract-expiry.read`; request a target page only
+when the user asks who. Contract end dates do not establish renewal or termination.
+For one employee's leave balance or history, use `attendance.leave.balance-history.read`;
+for their dated work records, use `attendance.person.daily-records.read`. Resolve
+the employee first; an aggregate question is not a reason to fetch personal records.
+
 For an operator, show the returned targets, states, and next Prego screen.
 Do not expose names unless the user explicitly asks who is affected or requests
 person-level readiness.

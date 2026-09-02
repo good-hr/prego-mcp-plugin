@@ -1,6 +1,6 @@
 ---
 name: payroll-operations
-description: "Review Prego payroll readiness, post-confirmation follow-up, and one employee's month-over-month pay variance. Use for payroll blockers, remaining payroll work, or pay-change explanations."
+description: "Review Prego payroll readiness, calculation and confirmation records, transfer-file status, retirement-pay cases, and one employee's pay variance. Use for payroll progress, blockers, remaining work, or pay-change explanations."
 ---
 
 # Payroll operations
@@ -24,6 +24,10 @@ Downstream status is month-scoped and does not take a payroll type or sequence.
 For other requests, use:
 
 - `payroll.prepare.readiness.read` before calculation;
+- `payroll.run.status.read` for recorded calculation and final confirmation;
+- `payroll.banking.batch-status.read` for transfer-file batch status, not bank payment;
+- `payroll.retirement.status.read` for one employee's retirement-pay case state,
+  keeping confirmation, completion, disposition, and freshness separate;
 - `payroll.downstream.status.read` for the selected month's Prego payroll-operation checklist;
 - `person.list.read` to resolve exactly one permission-visible employee before
   `payroll.variance.review.read`;

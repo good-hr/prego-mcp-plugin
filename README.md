@@ -8,8 +8,8 @@ Prego의 인사·급여 데이터를 ChatGPT, Codex, Claude, Gemini CLI에서 �
 
 - `company-briefing`: 대표·인사 총괄을 위한 인력·인사 기준정보·HR 운영 브리핑
 - `workforce-reporting`: 조직·직위·직무 인원현황 보고서와 인원·인건비 변화 분석
-- `hr-control-tower`: 인사 총괄의 위험·영향 요약과 운영 담당자의 대상·후속 화면
-- `payroll-operations`: 급여 준비, 월 운영 체크리스트, 개인 급여 차이 검토
+- `hr-control-tower`: HR 우선순위·입퇴사 준비, 계약 만료, 개인 휴가·근태 기록 확인
+- `payroll-operations`: 급여 준비·확정 이력, 이체파일·퇴직금정산 상태, 후속 체크리스트와 급여 차이 검토
 - `payroll-policy-builder`: 지급항목 계산식 초안 검증과 비저장 표본 테스트
 - `onboarding-import`: 고객 원본에서 필요한 공식 사원·급여 업로드 파일 생성과 비저장 사전검증
 

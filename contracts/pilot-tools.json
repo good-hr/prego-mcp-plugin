@@ -8,13 +8,19 @@
   "capabilities": [
     { "id": "company.context.read", "effect": "read", "foundation": true },
     { "id": "hr.operations.summary.read", "effect": "read" },
+    { "id": "hr.contract-expiry.read", "effect": "read" },
     { "id": "attendance.operations.summary.read", "effect": "read" },
+    { "id": "attendance.leave.balance-history.read", "effect": "read" },
+    { "id": "attendance.person.daily-records.read", "effect": "read" },
     { "id": "person.lifecycle.readiness.read", "effect": "read" },
     { "id": "person.list.read", "effect": "read" },
     { "id": "onboarding.import.catalog.read", "effect": "read" },
     { "id": "onboarding.import.preflight.read", "effect": "read" },
     { "id": "workforce.snapshot.read", "effect": "read" },
     { "id": "payroll.prepare.readiness.read", "effect": "read" },
+    { "id": "payroll.run.status.read", "effect": "read" },
+    { "id": "payroll.banking.batch-status.read", "effect": "read" },
+    { "id": "payroll.retirement.status.read", "effect": "read" },
     { "id": "payroll.ledger.read", "effect": "read" },
     { "id": "payroll.downstream.status.read", "effect": "read" },
     { "id": "payroll.variance.review.read", "effect": "read" },
@@ -38,11 +44,11 @@
     },
     {
       "id": "hr-control-tower",
-      "capabilities": ["hr.operations.summary.read", "attendance.operations.summary.read", "person.lifecycle.readiness.read"]
+      "capabilities": ["hr.operations.summary.read", "hr.contract-expiry.read", "attendance.operations.summary.read", "attendance.leave.balance-history.read", "attendance.person.daily-records.read", "person.lifecycle.readiness.read"]
     },
     {
       "id": "payroll-operations",
-      "capabilities": ["payroll.prepare.readiness.read", "payroll.downstream.status.read", "payroll.variance.review.read", "person.list.read", "payroll.ledger.read"]
+      "capabilities": ["payroll.prepare.readiness.read", "payroll.run.status.read", "payroll.banking.batch-status.read", "payroll.retirement.status.read", "payroll.downstream.status.read", "payroll.variance.review.read", "person.list.read", "payroll.ledger.read"]
     },
     {
       "id": "payroll-policy-builder",
