@@ -10,6 +10,10 @@ state an assumption when the result or user has not established it. Keep counts,
 comparisons, and conclusions within the returned company, date, eligibility, and
 other population scope. Do not combine different populations or treat an absent
 result as zero.
+Do not merge separately counted groups into unique people without deduplication
+evidence, or turn an unobserved issue into assurance that no decision is needed.
+Treat a familiar term's mapping to a company-specific label as an assumption
+until the user or returned data establishes that meaning.
 
 An ESS-eligible user count is not workforce headcount. Monthly lifecycle events
 include the returned period, not necessarily only events completed today; use

@@ -47,6 +47,11 @@ results; final result confirmation makes a whole settlement result version the
 official source for downstream Prego work. Neither result confirmation nor a
 generated file proves external bank payment, filing, delivery, or acceptance.
 
+A missing completion mark describes the Prego record, not whether the real-world
+task happened. Likewise, `RECALCULATION_REQUIRED` says to recalculate; without
+change evidence it does not explain what changed or when. Keep both observations
+as recorded states rather than turning them into a cause or a payment verdict.
+
 Treat previews, drafts, and read responses as non-persistent unless Prego returns
 an explicit successful save or confirmation. Do not infer an effective date,
 write, calculation, confirmation, or external completion from a displayed draft.
