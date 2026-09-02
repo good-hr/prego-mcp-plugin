@@ -5,16 +5,15 @@ description: "Prepare and preflight official Prego employee and payroll onboardi
 
 # Prego onboarding import
 
-HR and payroll records affect people and consequential work. Keep observations,
-interpretations, and actions distinct. Use neutral language; do not judge an
-employee, team, or company, or assign significance, cause, priority, or
-completion beyond the returned evidence. State uncertainty instead of filling
-gaps.
+Apply `$prego-interpretation` and any `referenceSkills` returned by Prego reads.
 
-Call `prego_company_context` and resolve one company. Call
-`prego_onboarding_import_catalog` without `itemId` before deciding which files
-to create. Always make these two discovery calls even when no source file is
-attached; a missing attachment stops item selection and preflight, not discovery.
+Call `prego_capabilities` and resolve one company from its context. It is also
+the permission-filtered catalog: use `prego_read` with `capabilityId`, `scope`,
+and capability-specific `arguments`, and never invent an ID or call one it did
+not return. Read `onboarding.import.catalog.read` without `itemId` before
+deciding which files to create. Always make these discovery calls even when no
+source file is attached; a missing attachment stops item selection and
+preflight, not discovery.
 Inspect only files attached in the current chat or explicitly
 supplied in the current workspace. If none is available, ask for an attachment;
 never search for or reuse prior or temporary artifacts. Select only groups with
@@ -55,7 +54,7 @@ title.
 Create one official workbook per selected information type regardless of the
 number of employees. Keep all applicable source rows in their original order;
 do not split one information type into multiple workbooks. Encode each completed
-workbook and call `prego_onboarding_import_preflight`. Fix only errors whose
+workbook and read `onboarding.import.preflight.read`. Fix only errors whose
 correction is exact from the source and workbook codes; otherwise return row,
 field, and one grouped question. Call preflight again only after changing a
 workbook to fix an error returned by the previous call. Do not recheck an

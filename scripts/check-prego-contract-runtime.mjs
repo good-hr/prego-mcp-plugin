@@ -98,7 +98,9 @@ export async function checkPregoContractFromRuntime({
     if (result.openApiSha256 !== expectedSha256) {
       throw new Error("FE registry OpenAPI digest가 runtime artifact와 다릅니다");
     }
-    process.stdout.write(`Prego pilot contract OK: ${result.toolCount} tools\n`);
+    process.stdout.write(
+      `Prego facade contract OK: ${result.capabilityCount} capabilities\n`,
+    );
     return {
       sha256: expectedSha256,
       pathCount: Object.keys(document.paths ?? {}).length,

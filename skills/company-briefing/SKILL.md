@@ -7,20 +7,23 @@ description: "Brief a representative or HR leader on Prego workforce, HR master-
 
 ## Workflow
 
-1. Call `prego_company_context` and resolve the requested company scope.
+1. Call `prego_capabilities` first. It returns the connected company context and
+   only the capability IDs available to this user. Use `prego_read` for each
+   permitted read with `capabilityId`, `scope`, and capability-specific
+   `arguments`; never invent an ID or call one that was not returned.
 2. Choose one aggregate path. Run independent reads in parallel when the client
    supports it:
-   - General executive briefing: call `prego_workforce_snapshot`,
-     `prego_hr_operations_summary`, and
-     `prego_attendance_operations_summary` for aligned dates with
+   - General executive briefing: call `prego_read` for
+     `workforce.snapshot.read`, `hr.operations.summary.read`, and
+     `attendance.operations.summary.read` for aligned dates with
      `previewSize: 0`. Keep the canonical `includeIdle: false` population.
      Preserve the default hierarchy levels and state the returned population,
      as-of date, and hierarchy basis; change them only when the user requests a
      different population or grouping. Omit `orgLevel` and `jobLevel` to use
      their defaults; never send `0` as a default.
-   - HR master-data completeness: call only `prego_workforce_snapshot` and
-     `prego_hr_operations_summary` with `previewSize: 0`; do not call attendance.
-   - Prego product usage: call only `prego_hr_operations_summary` with
+   - HR master-data completeness: call only `workforce.snapshot.read` and
+     `hr.operations.summary.read` with `previewSize: 0`; do not call attendance.
+   - Prego product usage: call only `hr.operations.summary.read` with
      `previewSize: 0`; do not call workforce, attendance, lifecycle, or payroll.
 3. Do not call person list or lifecycle detail tools for a general briefing.
    Route an explicit task-priority, new-hire, or leaver question to
@@ -37,12 +40,9 @@ and `UNASSIGNED` counts from workforce charts, but do not narrate
 
 ## Interpretation boundaries
 
-HR and payroll records affect people and consequential work. Keep observations,
-interpretations, and actions distinct. Use neutral language; do not judge an
-employee, team, or company, or assign significance, cause, priority, or
-completion beyond the returned evidence. State uncertainty instead of filling
-gaps. Write this briefing as an information organizer, not as a consultant
-diagnosing the company.
+Apply `$prego-interpretation` and any `referenceSkills` returned by Prego reads.
+Write this briefing as an information organizer, not as a consultant diagnosing
+the company.
 
 Use aggregate counts only; do not expose preview-row names or turn the briefing
 into an operator task queue. For a current month, separate returned lifecycle

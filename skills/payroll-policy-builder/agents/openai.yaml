@@ -1,7 +1,7 @@
 interface:
   display_name: "Payroll Policy Builder"
-  short_description: "Draft and test payroll policy changes"
-  default_prompt: "Use $payroll-policy-builder to draft and test this payroll allowance policy."
+  short_description: "Draft, validate, and save payroll items"
+  default_prompt: "Use $payroll-policy-builder to draft, validate, and optionally save this payroll allowance policy."
 dependencies:
   tools:
     - type: "mcp"
