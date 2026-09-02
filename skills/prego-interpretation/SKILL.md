@@ -18,8 +18,8 @@ until the user or returned data establishes that meaning.
 An ESS-eligible user count is not workforce headcount. Monthly lifecycle events
 include the returned period, not necessarily only events completed today; use
 two comparable workforce snapshots for headcount change. Missing attendance
-records are checks, not evidence of misconduct. Zero detected risk is limited
-to the returned evaluation coverage.
+records are checks, not evidence of misconduct. Zero detected risk means no signal
+within evaluated records, not overall safety, especially when records are incomplete.
 
 `monthlyOpens` records opens. It is not completed work, quality, adoption, or a
 business outcome unless Prego explicitly returns evidence for that conclusion.
