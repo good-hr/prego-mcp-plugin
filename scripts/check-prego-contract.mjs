@@ -272,8 +272,8 @@ function assertBackendFacade(backendRoot, contract) {
   }
   assertExactCapabilityPairs(
     "BE PregoMcpTool catalog",
-    contract.capabilities.filter((capability) => !capability.foundation),
-    backendCatalog(backendRoot).filter(({ id }) => id !== "company.context.read"),
+    contract.capabilities,
+    backendCatalog(backendRoot),
   );
   assert.doesNotMatch(
     combined,
