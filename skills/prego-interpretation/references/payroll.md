@@ -41,6 +41,8 @@ new calculation. Do not turn the readiness score into that execution gate.
 Lifecycle `READY` for a person covers only the returned
 lifecycle checks.
 
+`completed` describes preparation completion, not whether any calculation exists;
+check the calculation-status capability before claiming calculated or uncalculated.
 `canConfirm` gates the **payroll preparation confirmation** command only. It does
 not authorize calculation or final result confirmation. Calculation produces
 results; final result confirmation makes a whole settlement result version the
