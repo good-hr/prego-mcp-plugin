@@ -26,7 +26,7 @@ on an explicit save request use `payroll.deduction-item.create` or
 write limits below. The payment-formula preview is not a deduction simulation;
 do not claim a deduction was sample-tested with it.
 
-For any deduction-only request (list, create, or update), stop after that flow. The
+For any deduction-only request, stop after that flow. The
 selection and sample-preview workflow below applies only to a payment-formula
 draft or validation request.
 
@@ -61,8 +61,10 @@ draft, first read `payroll.payment-item.list.read`; for an edit, preserve every
 unchanged field returned by that read. Then call `prego_update` with either
 `payroll.payment-item.create` or `payroll.payment-item.update`. State the exact
 item and fields that will change immediately before the call, but do not ask a
-second conversational confirmation: the client's destructive-tool approval is
-the confirmation. Do not use `prego_update` for activation, deletion,
-reordering, payroll calculation, or confirmed results. A formula preview never
-changes payroll, and an unavailable update capability means the user must use
-the returned Prego handoff instead.
+second conversational confirmation when the requested change is already clear.
+For an explicit activation, deactivation, deletion, or ordering request, use the
+discovered update action and its exact payload; do not fabricate a full item for
+a lifecycle action. Calculation order and display order are different. Respect
+dependency guards, re-read the result, and keep any shared-policy impact visible.
+A formula preview never changes payroll. For requested payroll execution, use
+the payroll-operations workflow; an unavailable capability needs a Prego handoff.

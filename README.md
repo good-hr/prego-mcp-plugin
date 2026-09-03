@@ -2,47 +2,46 @@
 
 Prego의 인사·급여 데이터를 ChatGPT, Codex, Claude, Gemini CLI에서 조회하고,
 보고서 작성과 운영 점검 뒤 근거가 되는 Prego 화면으로 이동하는 플러그인이다.
-초기 범위에서는 검증을 마친 지급·공제항목 생성·수정도 지원한다.
+허용된 설정 편집과 근태 마감·급여 준비·계산·정산·확정도 같은 MCP에서 실행한다.
 
 ## 제공 스킬
 
 - `company-briefing`: 대표·인사 총괄을 위한 인력·인사 기준정보·HR 운영 브리핑
 - `workforce-reporting`: 조직·직위·직무 인원현황 보고서와 인원·인건비 변화 분석
 - `hr-control-tower`: HR 우선순위·입퇴사 준비, 계약 만료, 개인 휴가·근태 기록 확인
-- `payroll-operations`: 급여 준비·확정 이력, 이체파일·퇴직금정산 상태, 후속 체크리스트와 급여 차이 검토
+- `payroll-operations`: 급여 준비·계산·정산·확정과 후속 업무, 상태 확인과 명시적으로 요청한 실행
 - `payroll-policy-builder`: 지급항목 계산식 초안 검증과 비저장 표본 테스트
 - `onboarding-import`: 고객 원본에서 필요한 공식 사원·급여 업로드 파일 생성과 비저장 사전검증
 
-플러그인은 `https://api.prego.team/mcp`만 사용한다. 고객에서 외부 AI 연결을 활성화한 뒤 Prego 로그인, 조직 선택, 외부 앱 연결 확인을 거친다. 한 연결은 고객에 고정되고, 접근 가능한 회사·기능·데이터 범위는 매 discovery와 호출마다 Prego가 다시 확인한다. Prego의 MASTER·ADMIN은 `설정 > 외부 AI 연결`에서 제공자별 연결 허용 여부를 관리할 수 있고, 연결은 외부 앱의 연결 설정에서 해제할 수 있다. 정책 preview와 온보딩 사전검증은 비저장이며, 현재 쓰기는 지급·공제항목 생성·수정으로 한정한다. 승인, 업로드·커밋, 급여 계산·확정은 하지 않는다. 화면 링크는 제품이 지원하는 회사·기간·탭·필터만 복원하며, 지원하지 않는 대상 상태는 일반 확인 화면으로 안내한다.
+플러그인은 `https://api.prego.team/mcp`만 사용한다. Prego 로그인과 외부 앱 연결 확인을 거치며, 접근 가능한 회사·기능·데이터 범위는 매 discovery와 호출마다 Prego가 다시 확인한다. MASTER·ADMIN은 `설정 > 외부 AI 연결`에서 제공자를 관리하며, 연결은 외부 앱에서 해제할 수 있다. 설정·실행 지원 여부와 입력은 현재 서버의 capability를 따른다. 정책 preview와 온보딩 사전검증은 비저장이며, 실제 은행 지급·외부 신고·전자서명·권한 변경은 지원하지 않는다. 화면 링크는 제품이 소비하는 회사·기간·탭·필터만 복원한다.
 
 외부 AI가 반환 데이터를 저장·처리·국외이전하는 조건은 고객사가 선택한 서비스의 정책과 계약을 따른다. Prego MCP 감사 이벤트에는 호출 주체·외부 앱·tool·건수·상태만 남기며 prompt, tool 인자, 응답 payload는 저장하지 않는다.
 
 ## 연결
 
 모든 client는 Prego OAuth로 연결한다. 조회에는 `prego:read`가 필요하고,
-지급·공제항목 생성·수정에는 `prego:write`도 필요하다. 쓰기는 기존 SaaS의
-앱 편집·급여 데이터 full-access를 계속 확인한다. 조직 관리자가 해당 제공자를
+설정 변경과 실행에는 `prego:write`도 필요하다. 쓰기는 기존 SaaS의
+앱 편집·해당 도메인 데이터 권한·서비스별 전체 접근 조건을 계속 확인한다. 조직 관리자가 해당 제공자를
 껐다면 새 연결, token 갱신, 기존 token을 사용한 호출이 모두 거부된다.
 
 ## MCP 도구 계약
 
 Prego는 내부 API별 도구를 공개하지 않는다. 스킬과 agent는 먼저
 `prego_capabilities`로 현재 회사 맥락과 허용 capability를 확인한 뒤, 각
-capability ID와 입력 schema에 맞춰 `prego_read` 또는 `prego_update`를 호출한다.
+목록에서 고른 `capabilityId`를 같은 탐색 도구에 지정해 상세 입력 schema를 받는다.
+그 형식에 맞춰 `prego_read` 또는 `prego_update`를 호출한다.
 허용되지 않았거나 반환되지 않은 capability ID는 호출할 수 없다.
 
 | Tool | 용도 | 확인 방식 |
 | --- | --- | --- |
 | `prego_capabilities` | 회사 맥락과 권한 기반 capability 탐색 | 조회 |
 | `prego_read` | 허용된 조회 capability 실행 | 조회 |
-| `prego_update` | 지원되는 지급·공제항목 생성·수정 | destructive tool 승인 |
+| `prego_update` | 허용된 설정 변경·마감·계산·정산·확정 | 명시한 작업과 기존 업무 상태·권한 검사 |
 
-`prego_update`는 destructive MCP tool이다. agent는 실행 직전에 바뀔 항목을
-짧게 설명하고, 별도의 대화형 확인을 반복하지 않는다. client가 destructive
-annotation을 승인 화면으로 표시하는 경우 그 화면이 실제 확인이다. 이 동작은
-client별 E2E에서 확인해야 하며, annotation을 지원하지 않는 client에는 쓰기
-capability를 제공했다고 단정하지 않는다. 현재 `prego_operate`는 제공하지
-않으며, 급여 확정·이체·승인·삭제 같은 작업은 Prego 화면에서 처리한다.
+`prego_update`는 destructive MCP tool이다. agent는 현재 값과 대상·기간을 확인하고
+사용자가 요청한 변경만 실행한다. annotation은 client의 확인을 돕는 힌트이며
+서버 권한·버전·업무 상태 검사를 대체하지 않는다. 접수·계산 완료·최종 확정·외부
+지급은 서로 다르므로 반환 식별자로 결과를 재조회한다. 별도 `prego_operate`는 없다.
 
 ### ChatGPT
 
@@ -97,7 +96,7 @@ Gemini CLI를 다시 시작하고 `/mcp auth prego`를 실행한다. 브라우�
 - 기본 제공자: OpenAI(ChatGPT·Codex), Claude, Gemini CLI
 - 추가 client: Prego 설정에서 CIMD metadata URL 또는 public client ID와 callback을 직접 등록
 - 인증: authorization code + PKCE S256, client secret 미사용
-- 미지원: DCR, confidential client, wildcard callback, 급여 확정·이체·승인·삭제 같은 operate 작업
+- 미지원: DCR, confidential client, wildcard callback, 실제 이체·외부 신고·전자서명·사용자 권한 변경
 
 ## 검증
 

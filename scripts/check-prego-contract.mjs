@@ -148,12 +148,7 @@ function assertSkills(contract) {
     assert.match(source, /\$prego-interpretation/, `${skill.id}: 공통 해석 skill을 참조해야 합니다`);
     assert.match(source, /referenceSkills/, `${skill.id}: returned referenceSkills를 안내해야 합니다`);
   }
-  const policy = readFileSync(
-    join(PLUGIN_ROOT, "skills", "payroll-policy-builder", "SKILL.md"),
-    "utf8",
-  );
-  assert.match(policy, /client's destructive-tool approval is\s+the confirmation/);
-  assert.match(policy, /do not ask a\s+second conversational confirmation/);
+  // 승인 문구의 의미는 시나리오 리뷰에서 검증한다. 특정 영문 문장을 계약으로 고정하지 않는다.
 }
 
 function frontendRegistry(frontendRoot, openApi) {

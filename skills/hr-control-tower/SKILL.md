@@ -1,6 +1,6 @@
 ---
 name: hr-control-tower
-description: "Prioritize HR work, check new-hire or leaver readiness and contract expiry, and answer one employee's leave or attendance-record questions. Use for daily HR operations and follow-up, not a general executive briefing."
+description: "Prioritize HR work, check lifecycle readiness, and handle requested HR settings, leave, assignment, or closing steps. Use for daily HR operations and follow-up, not a general executive briefing."
 ---
 
 # HR control tower
@@ -46,5 +46,10 @@ For an operator, show the returned targets, states, and next Prego screen.
 Do not expose names unless the user explicitly asks who is affected or requests
 person-level readiness.
 
-Do not approve, edit, close, or infer work. Include the responsible Prego screen
-returned by each tool verbatim in the final answer.
+Do not turn a status question into a change. For an explicit settings, assignment,
+leave grant, or closing request, discover the matching update capability, read
+the current target, and execute only the requested step. A saved policy, applied
+assignment, closing run, and locked result are different states. Preserve
+effective dates and reasons; use the returned ID for readback. Approval-template
+editing is not approval of an employee's request. Include the returned Prego
+screen verbatim even when the requested action is blocked.

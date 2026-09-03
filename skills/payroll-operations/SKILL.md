@@ -1,6 +1,6 @@
 ---
 name: payroll-operations
-description: "Review Prego payroll readiness, calculation and confirmation records, transfer-file status, retirement-pay cases, and one employee's pay variance. Use for payroll progress, blockers, remaining work, or pay-change explanations."
+description: "Review or execute requested Prego payroll preparation, calculation, confirmation, and settlement steps. Use for payroll progress, blockers, remaining work, or pay-change explanations."
 ---
 
 # Payroll operations
@@ -59,8 +59,13 @@ Explain a variance only from returned item deltas and
 calculation provenance; do not invent a business cause.
 
 For an HR leader, summarize blockers and affected scope. For a payroll operator,
-show the exact selection, target, state, and next action. This skill never
-calculates, confirms, changes, or retries payroll. Include the returned handoff
+show the exact selection, target, state, and next action. For an explicit execution
+request, discover the matching update capability and its read sibling. Preserve
+the selected settlement and current revision; preparation, calculation, final
+confirmation, and downstream work are separate commands. Poll a returned batch
+through its read capability rather than treating acceptance as completion.
+On a blocker or stale version, read the current state and report the next
+supported action instead of bypassing the product guard. Include the returned handoff
 for every completed tool call, even in a short answer, but label it as a general
 screen when it does not restore the employee or draft state.
 
