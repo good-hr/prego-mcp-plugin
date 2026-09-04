@@ -58,12 +58,12 @@ function assertPluginManifest() {
   const packagedContract = readFileSync(join(PLUGIN_ROOT, "README.md"), "utf8");
   assert.match(
     packagedContract,
-    /`prego:mcp`/,
+    /\bprego:mcp\b/,
     "plugin 문서에 현재 Prego OAuth scope가 필요합니다",
   );
   assert.doesNotMatch(
     packagedContract,
-    /`prego:(?:read|write)`/,
+    /\bprego:(?:read|write)\b/,
     "plugin 문서에 폐기된 Prego OAuth scope가 남아 있습니다",
   );
 }
