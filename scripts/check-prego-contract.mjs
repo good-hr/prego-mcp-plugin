@@ -54,6 +54,18 @@ function assertPluginManifest() {
     (manifest.interface?.defaultPrompt?.length ?? 0) <= 3,
     "plugin defaultPrompt는 Codex가 지원하는 최대 3개를 넘을 수 없습니다",
   );
+
+  const packagedContract = readFileSync(join(PLUGIN_ROOT, "README.md"), "utf8");
+  assert.match(
+    packagedContract,
+    /\bprego:mcp\b/,
+    "plugin 문서에 현재 Prego OAuth scope가 필요합니다",
+  );
+  assert.doesNotMatch(
+    packagedContract,
+    /\bprego:(?:read|write)\b/,
+    "plugin 문서에 폐기된 Prego OAuth scope가 남아 있습니다",
+  );
 }
 
 function assertContract(contract) {
