@@ -13,16 +13,16 @@ Prego의 인사·급여 데이터를 ChatGPT, Codex, Claude, Gemini CLI에서 �
 - `payroll-policy-builder`: 지급항목 계산식 초안 검증과 비저장 표본 테스트
 - `onboarding-import`: 고객 원본에서 필요한 공식 사원·급여 업로드 파일 생성과 비저장 사전검증
 
-플러그인은 `https://api.prego.team/mcp`만 사용한다. Prego 로그인과 외부 앱 연결 확인을 거치며, 접근 가능한 회사·기능·데이터 범위는 매 discovery와 호출마다 Prego가 다시 확인한다. MASTER·ADMIN은 `설정 > 외부 AI 연결`에서 제공자를 관리하며, 연결은 외부 앱에서 해제할 수 있다. 설정·실행 지원 여부와 입력은 현재 서버의 capability를 따른다. 정책 preview와 온보딩 사전검증은 비저장이며, 실제 은행 지급·외부 신고·전자서명·권한 변경은 지원하지 않는다. 화면 링크는 제품이 소비하는 회사·기간·탭·필터만 복원한다.
+플러그인은 `https://api.prego.team/mcp`만 사용한다. Prego 로그인과 외부 앱 연결 확인을 거치며, 접근 가능한 회사·기능·데이터 범위는 매 discovery와 호출마다 Prego가 다시 확인한다. `권한 관리` 권한이 있는 사용자는 `외부 서비스 연동 > AI 연결`에서 서비스별 조회·수정 허용 상태를 관리하며, 연결은 외부 서비스에서도 해제할 수 있다. 설정·실행 지원 여부와 입력은 현재 서버의 capability를 따른다. 정책 preview와 온보딩 사전검증은 비저장이며, 실제 은행 지급·외부 신고·전자서명·권한 변경은 지원하지 않는다. 화면 링크는 제품이 소비하는 회사·기간·탭·필터만 복원한다.
 
 외부 AI가 반환 데이터를 저장·처리·국외이전하는 조건은 고객사가 선택한 서비스의 정책과 계약을 따른다. Prego MCP 감사 이벤트에는 호출 주체·외부 앱·tool·건수·상태만 남기며 prompt, tool 인자, 응답 payload는 저장하지 않는다.
 
 ## 연결
 
-모든 client는 Prego OAuth로 연결한다. 조회에는 `prego:read`가 필요하고,
-설정 변경과 실행에는 `prego:write`도 필요하다. 쓰기는 기존 SaaS의
-앱 편집·해당 도메인 데이터 권한·서비스별 전체 접근 조건을 계속 확인한다. 조직 관리자가 해당 제공자를
-껐다면 새 연결, token 갱신, 기존 token을 사용한 호출이 모두 거부된다.
+모든 client는 Prego OAuth의 단일 `prego:mcp` scope로 연결한다. 조회·수정 허용은
+OAuth scope가 아니라 `외부 서비스 연동 > AI 연결`의 서비스 정책과 기존 SaaS의
+앱·자료·사람 범위 권한으로 결정한다. 관리자가 서비스를 끄면 새 연결, token 갱신,
+기존 token을 사용한 호출이 모두 거부된다.
 
 ## MCP 도구 계약
 
@@ -82,7 +82,7 @@ Team·Enterprise 조직에서는 Owner가 Organization connectors에 먼저 추�
       "oauth": {
         "enabled": true,
         "clientId": "prego-gemini-cli",
-        "scopes": ["prego:read", "prego:write"]
+        "scopes": ["prego:mcp"]
       }
     }
   }
@@ -90,6 +90,12 @@ Team·Enterprise 조직에서는 Owner가 Organization connectors에 먼저 추�
 ```
 
 Gemini CLI를 다시 시작하고 `/mcp auth prego`를 실행한다. 브라우저가 열리면 Prego 로그인과 조직 선택을 완료한다. callback은 Gemini CLI가 연 로컬 포트의 `http://localhost:<port>/oauth/callback`을 사용한다.
+
+### OAuth scope 변경 뒤 다시 연결하기
+
+기존 연결이 이전 scope를 저장하고 있다면 연결 버튼을 반복해서 누르지 말고 해당
+서비스에서 Prego 연결을 삭제한 뒤 MCP URL로 다시 추가한다. 새 연결이 Prego의
+OAuth discovery에서 현재 `prego:mcp` scope를 읽어야 로그인 화면으로 이동한다.
 
 ## 지원 범위
 

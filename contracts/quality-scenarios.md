@@ -9,7 +9,8 @@
 | OAuth         | client 또는 tenant 정책 비활성화                 | refresh와 기존 bearer 모두 다음 요청부터 거부                                                           | BE security test              |
 | MCP discovery | capability 탐색 후 허용되지 않은 ID 호출        | 현재 회사·App·데이터 권한 밖 capability가 목록과 실행에서 모두 거부                                      | BE MCP contract test          |
 | MCP facade    | `prego_read`와 `prego_update` effect 분리       | read는 update capability를 실행할 수 없고, update는 destructive annotation과 입력 schema를 보존          | BE MCP contract test          |
-| MCP scope     | `prego:read`만 승인한 연결                       | `prego_update`와 update capability를 숨기고 ID를 직접 호출해도 거부                                     | BE MCP contract test          |
+| MCP policy    | 관리자가 연결 서비스의 수정을 끈 상태            | 단일 `prego:mcp` 연결은 유지하되 `prego_update`와 update capability를 숨기고 직접 호출도 거부             | BE MCP contract test          |
+| OAuth scope   | 보호 리소스와 OAuth discovery 조회               | 양쪽 모두 단일 `prego:mcp`만 광고하고 구 `prego:read`·`prego:write` 요청은 `invalid_scope`로 거부         | 배포 후 contract check        |
 | MCP update    | 지급·공제항목 수정                               | 현재 항목의 전체 DTO를 사용하고 App 편집·급여자료 편집·전체 접근 중 하나라도 없으면 거부                 | BE MCP contract test          |
 | MCP period    | 급여 준비가 `selection_required` 반환            | `referenceMonth`, 회사·월 handoff, 후보를 함께 보존                                                     | BE adapter test               |
 | MCP semantics | workforce `includeIdle` false/true 및 ALL        | 응답이 실제 포함 모집단을 명시                                                                          | BE adapter test               |
