@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawn } from "node:child_process";
 import {
   chmodSync,
   existsSync,
@@ -10,6 +11,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
+import { fileURLToPath } from "node:url";
 
 import {
   buildInvocation,
@@ -43,6 +45,14 @@ async function assertProcessExited(pid, timeoutMs = 1_000) {
       }
     }
     if (Date.now() >= deadline) assert.fail(`process ${pid} is still alive`);
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
+}
+
+async function waitForFile(path, timeoutMs = 1_000) {
+  const deadline = Date.now() + timeoutMs;
+  while (!existsSync(path)) {
+    if (Date.now() >= deadline) assert.fail(`timed out waiting for ${path}`);
     await new Promise((resolve) => setTimeout(resolve, 25));
   }
 }
@@ -394,3 +404,85 @@ while :; do /bin/sleep 1; done
     rmSync(outputDir, { recursive: true, force: true });
   }
 });
+
+for (const [cancellationSignal, expectedExitCode] of [
+  ["SIGINT", 130],
+  ["SIGTERM", 143],
+]) {
+  test(
+    `${cancellationSignal} cancels the runner and force-kills its detached descendants`,
+    { skip: process.platform === "win32" },
+    async () => {
+      const outputDir = mkdtempSync(
+        join(tmpdir(), "prego-conversation-signal-"),
+      );
+      const tokenEnv = "PREGO_CONVERSATION_SIGNAL_TOKEN";
+      const childPidPath = join(outputDir, "inherited-child.pid");
+      const termPath = join(outputDir, "leader-term");
+      const executable = join(outputDir, "codex");
+      writeFileSync(
+        executable,
+        `#!/bin/sh
+trap 'echo term > "${termPath}"; exit 0' TERM
+/bin/sh -c 'trap "" TERM; echo $$ > "${childPidPath}"; exec >/dev/null 2>&1; while :; do /bin/sleep 1; done' &
+while :; do /bin/sleep 1; done
+`,
+      );
+      chmodSync(executable, 0o700);
+      const runner = spawn(
+        process.execPath,
+        [
+          fileURLToPath(
+            new URL("./prego-payroll-conversation-runner.mjs", import.meta.url),
+          ),
+          "--id",
+          "signal-cancel",
+          "--case-id",
+          "holiday-allowance",
+          "--question",
+          "명절수당을 저장해줘",
+          "--mcp-url",
+          "http://127.0.0.1:8082/mcp",
+          "--fixture-scope",
+          "Company fixture only",
+          "--token-env",
+          tokenEnv,
+          "--output-dir",
+          outputDir,
+          "--timeout-ms",
+          "60000",
+        ],
+        {
+          env: {
+            ...process.env,
+            PATH: outputDir,
+            [tokenEnv]: "private-test-token",
+          },
+          stdio: "ignore",
+        },
+      );
+      try {
+        await waitForFile(childPidPath);
+        const closed = new Promise((resolve) =>
+          runner.once("close", (code, signal) => resolve([code, signal])),
+        );
+        runner.kill(cancellationSignal);
+        const [exitCode, exitSignal] = await closed;
+        assert.equal(exitCode, expectedExitCode);
+        assert.equal(exitSignal, null);
+        assert.equal(existsSync(termPath), true);
+        const inheritedChildPid = Number(readFileSync(childPidPath, "utf8"));
+        await assertProcessExited(inheritedChildPid);
+        const summary = JSON.parse(
+          readFileSync(join(outputDir, "signal-cancel.summary.json"), "utf8"),
+        );
+        assert.equal(summary.process.status, "CANCELLED");
+        assert.equal(summary.process.signal, cancellationSignal);
+      } finally {
+        if (runner.exitCode === null && runner.signalCode === null)
+          runner.kill("SIGKILL");
+        rmSync(outputDir, { recursive: true, force: true });
+      }
+    },
+  );
+}

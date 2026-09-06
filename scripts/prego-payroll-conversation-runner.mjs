@@ -599,8 +599,11 @@ export async function runPayrollConversation({
   const outputFinished = [finished(jsonlStream), finished(stderrStream)];
   let forceKillTimer = null;
   let forceKill = Promise.resolve();
-  const timer = setTimeout(() => {
-    timedOut = true;
+  let cancellationSignal = null;
+  let terminationRequested = false;
+  const terminate = () => {
+    if (terminationRequested) return;
+    terminationRequested = true;
     signalProcessGroup(child, "SIGTERM");
     forceKill = new Promise((resolve) => {
       forceKillTimer = setTimeout(() => {
@@ -608,7 +611,19 @@ export async function runPayrollConversation({
         resolve();
       }, TERMINATION_GRACE_MS);
     });
+  };
+  const timer = setTimeout(() => {
+    timedOut = true;
+    terminate();
   }, timeoutMs);
+  const cancel = (receivedSignal) => {
+    cancellationSignal ??= receivedSignal;
+    terminate();
+  };
+  const onSigint = () => cancel("SIGINT");
+  const onSigterm = () => cancel("SIGTERM");
+  process.on("SIGINT", onSigint);
+  process.on("SIGTERM", onSigterm);
   const closed = await new Promise((resolve) => {
     let settled = false;
     const finish = (code, closeSignal) => {
@@ -625,8 +640,10 @@ export async function runPayrollConversation({
     child.once("close", finish);
   });
   clearTimeout(timer);
-  if (timedOut) await forceKill;
+  if (terminationRequested) await forceKill;
   else clearTimeout(forceKillTimer);
+  process.off("SIGINT", onSigint);
+  process.off("SIGTERM", onSigterm);
   [exitCode, signal] = closed;
   await Promise.allSettled(outputFinished);
   sanitizeAnswer(files.answerPath, token);
@@ -648,13 +665,15 @@ export async function runPayrollConversation({
     process: {
       status: timedOut
         ? "TIMED_OUT"
-        : spawnError
-          ? "SPAWN_ERROR"
-          : exitCode === 0
-            ? "COMPLETED"
-            : "PROCESS_FAILED",
+        : cancellationSignal
+          ? "CANCELLED"
+          : spawnError
+            ? "SPAWN_ERROR"
+            : exitCode === 0
+              ? "COMPLETED"
+              : "PROCESS_FAILED",
       exitCode,
-      signal,
+      signal: cancellationSignal ?? signal,
       seconds: Math.round((Date.now() - startedAt) / 1000),
       error: spawnError,
     },
@@ -722,6 +741,8 @@ async function main() {
   process.stdout.write(
     `${JSON.stringify({ id: summary.id, process: summary.process.status, outputs: summary.outputs })}\n`,
   );
+  if (summary.process.status === "CANCELLED")
+    process.exitCode = summary.process.signal === "SIGINT" ? 130 : 143;
 }
 
 if (import.meta.url === new URL(`file://${process.argv[1]}`).href) {

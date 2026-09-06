@@ -55,7 +55,9 @@ allowance needs payment and non-payment months, not a target duty code. Check
 each requested month and at least one excluded month. Report sample errors,
 unsupported scenarios and any individual amount overriding the formula; syntax
 validity alone is not proof of the amount. Never extrapolate samples to company
-totals. If the proposed payroll-type link cannot yet be simulated, distinguish
+totals. Report sample results using only role and amount impact by default; do
+not expose names, employee numbers or email addresses unless the user explicitly
+requests those identifiers. If the proposed payroll-type link cannot yet be simulated, distinguish
 that limitation and verify the stored item in that type after the requested save.
 
 ## Complete the requested setting
