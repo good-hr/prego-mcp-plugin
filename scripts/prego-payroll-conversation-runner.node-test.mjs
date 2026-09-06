@@ -1,5 +1,12 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -14,6 +21,20 @@ import {
   requireLoopbackMcpUrl,
   runPayrollConversation,
 } from "./prego-payroll-conversation-runner.mjs";
+
+async function assertProcessExited(pid, timeoutMs = 1_000) {
+  const deadline = Date.now() + timeoutMs;
+  while (true) {
+    try {
+      process.kill(pid, 0);
+    } catch (error) {
+      if (error.code === "ESRCH") return;
+      throw error;
+    }
+    if (Date.now() >= deadline) assert.fail(`process ${pid} is still alive`);
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
+}
 
 test("conversation runner rejects non-loopback MCP fixture URLs", () => {
   assert.throws(
@@ -123,7 +144,7 @@ test("runner isolates the agent without prescribing raw mode tool ordering", () 
     args.includes("sandbox_workspace_write.network_access=true"),
     true,
   );
-  assert.equal(args.includes("--approve-for-me"), true);
+  assert.equal(args.includes("--approve-for-me"), false);
   assert.equal(args.includes('approval_policy="on-request"'), true);
   assert.equal(args.includes('approvals_reviewer="auto_review"'), true);
   assert.equal(args.includes('approval_policy="never"'), false);
@@ -297,6 +318,51 @@ test("spawn failure produces a private SPAWN_ERROR summary instead of rejecting 
     });
     assert.equal(summary.process.status, "SPAWN_ERROR");
     assert.equal(JSON.stringify(summary).includes("private-test-token"), false);
+  } finally {
+    if (originalPath === undefined) delete process.env.PATH;
+    else process.env.PATH = originalPath;
+    delete process.env[tokenEnv];
+    rmSync(outputDir, { recursive: true, force: true });
+  }
+});
+
+test("timeout force-kills a SIGTERM-trapping child after its leader closes", async () => {
+  const outputDir = mkdtempSync(join(tmpdir(), "prego-conversation-timeout-"));
+  const tokenEnv = "PREGO_CONVERSATION_TIMEOUT_TOKEN";
+  const childPidPath = join(outputDir, "inherited-child.pid");
+  const termPath = join(outputDir, "leader-term");
+  const originalPath = process.env.PATH;
+  process.env[tokenEnv] = "private-test-token";
+  process.env.PATH = outputDir;
+  const executable = join(outputDir, "codex");
+  writeFileSync(
+    executable,
+    `#!/bin/sh
+trap 'echo term > "${termPath}"; exit 0' TERM
+/bin/sh -c 'trap "" TERM; echo $$ > "${childPidPath}"; exec >/dev/null 2>&1; while :; do /bin/sleep 1; done' &
+while :; do /bin/sleep 1; done
+`,
+  );
+  chmodSync(executable, 0o700);
+  try {
+    const startedAt = Date.now();
+    const summary = await runPayrollConversation({
+      id: "timeout-force-kill",
+      caseId: "holiday-allowance",
+      question: "명절수당을 저장해줘",
+      mcpUrl: "http://127.0.0.1:8082/mcp",
+      fixtureScope: "Company fixture only",
+      tokenEnvVar: tokenEnv,
+      outputDir,
+      timeoutMs: 1_000,
+    });
+    const elapsedMs = Date.now() - startedAt;
+    assert.equal(summary.process.status, "TIMED_OUT");
+    assert.ok(elapsedMs < 2_500, `timeout took ${elapsedMs}ms`);
+    assert.equal(existsSync(termPath), true);
+    assert.equal(existsSync(childPidPath), true);
+    const inheritedChildPid = Number(readFileSync(childPidPath, "utf8"));
+    await assertProcessExited(inheritedChildPid);
   } finally {
     if (originalPath === undefined) delete process.env.PATH;
     else process.env.PATH = originalPath;

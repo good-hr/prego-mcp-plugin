@@ -140,10 +140,11 @@ node scripts/check-prego-contract-runtime.mjs \
 자료를 `--fixture-scope`로 명시한다. 이 경계는 에이전트 지침이며 서버 권한을 대신하지
 않으므로 실제 고객 데이터가 없는 로컬 테스트 환경만 사용한다.
 
-쓰기 허용 레인은 `--approve-for-me`의 자동 승인 심사를 사용한다. destructive MCP는
-파일 sandbox와 별도로 승인이 필요하므로 `approval_policy=never`로 쓰기 실험을
-실행하지 않는다. 검토 전용 레인은 read-only/never를 유지한다. 심사 거부·timeout은
-설정 저장 성공으로 처리하지 않는다. [Codex 승인 계약](https://learn.chatgpt.com/docs/agent-approvals-security)을 따른다.
+쓰기 허용 레인은 각 실행에 `approval_policy=on-request`,
+`approvals_reviewer=auto_review`, `sandbox_mode=workspace-write`를 설정한다.
+destructive MCP는 파일 sandbox와 별도로 승인이 필요하므로 `approval_policy=never`로
+쓰기 실험을 실행하지 않는다. 검토 전용 레인은 read-only/never를 유지한다. 심사
+거부·timeout은 설정 저장 성공으로 처리하지 않는다. [Codex 승인 계약](https://learn.chatgpt.com/docs/agent-approvals-security)을 따른다.
 
 ```sh
 node scripts/prego-payroll-conversation-runner.mjs \

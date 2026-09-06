@@ -25,6 +25,7 @@ const SCRIPT_ROOT = dirname(fileURLToPath(import.meta.url));
 const DEFAULT_TOKEN_ENV = "PREGO_PAYROLL_CONVERSATION_BEARER";
 const MODES = new Set(["raw-mcp", "plugin-skill"]);
 const WRITE_POLICIES = new Set(["deny", "allow-explicit-local-fixture"]);
+const TERMINATION_GRACE_MS = 1_000;
 
 function requireIdentifier(name, value) {
   if (typeof value !== "string" || !/^[a-z0-9][a-z0-9-]{0,63}$/.test(value)) {
@@ -221,7 +222,7 @@ export function buildInvocation({
     "exec",
     "-C",
     cwd,
-    ...(allowsFixtureWrites ? ["--approve-for-me"] : ["-s", "read-only"]),
+    ...(allowsFixtureWrites ? [] : ["-s", "read-only"]),
     ...common,
     question,
   ];
@@ -257,6 +258,18 @@ export function createRedactingTransform(secret) {
       callback();
     },
   });
+}
+
+function signalProcessGroup(child, signal) {
+  if (!Number.isInteger(child.pid) || child.pid < 1) return false;
+  if (process.platform === "win32") return child.kill(signal);
+  try {
+    process.kill(-child.pid, signal);
+    return true;
+  } catch (error) {
+    if (error.code === "ESRCH") return false;
+    throw error;
+  }
 }
 
 function capabilityContext(item) {
@@ -558,6 +571,7 @@ export async function runPayrollConversation({
     cwd,
     env: childEnvironment(tokenEnvVar, token),
     stdio: ["ignore", "pipe", "pipe"],
+    detached: process.platform !== "win32",
   });
   const stdout = createRedactingTransform(token);
   const stderr = createRedactingTransform(token);
@@ -576,9 +590,17 @@ export async function runPayrollConversation({
   if (child.stderr) child.stderr.pipe(stderr).pipe(stderrStream);
   else stderrStream.end();
   const outputFinished = [finished(jsonlStream), finished(stderrStream)];
+  let forceKillTimer = null;
+  let forceKill = Promise.resolve();
   const timer = setTimeout(() => {
     timedOut = true;
-    child.kill("SIGTERM");
+    signalProcessGroup(child, "SIGTERM");
+    forceKill = new Promise((resolve) => {
+      forceKillTimer = setTimeout(() => {
+        signalProcessGroup(child, "SIGKILL");
+        resolve();
+      }, TERMINATION_GRACE_MS);
+    });
   }, timeoutMs);
   const closed = await new Promise((resolve) => {
     let settled = false;
@@ -596,6 +618,8 @@ export async function runPayrollConversation({
     child.once("close", finish);
   });
   clearTimeout(timer);
+  if (timedOut) await forceKill;
+  else clearTimeout(forceKillTimer);
   [exitCode, signal] = closed;
   await Promise.allSettled(outputFinished);
   sanitizeAnswer(files.answerPath, token);
