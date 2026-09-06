@@ -10,7 +10,8 @@ const PLUGIN_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const CONTRACT_PATH = join(PLUGIN_ROOT, "contracts/pilot-tools.json");
 const FACADE_TOOLS = ["prego_capabilities", "prego_read", "prego_update"];
 const SHARED_SKILL_IDS = ["prego-interpretation"];
-const LEGACY_TOOL_PATTERN = /prego_(company_context|hr_operations_summary|attendance_operations_summary|person_lifecycle_readiness|person_list|onboarding_import_catalog|onboarding_import_preflight|workforce_snapshot|payroll_prepare_readiness|payroll_ledger|payroll_downstream_status|payroll_variance_review|payroll_policy_preview|workforce_cost_bridge)/;
+const LEGACY_TOOL_PATTERN =
+  /prego_(company_context|hr_operations_summary|attendance_operations_summary|person_lifecycle_readiness|person_list|onboarding_import_catalog|onboarding_import_preflight|workforce_snapshot|payroll_prepare_readiness|payroll_ledger|payroll_downstream_status|payroll_variance_review|payroll_policy_preview|workforce_cost_bridge)/;
 
 function readJson(path) {
   return JSON.parse(readFileSync(path, "utf8"));
@@ -69,14 +70,22 @@ function assertPluginManifest() {
 }
 
 function assertContract(contract) {
-  assert.equal(contract.version, 2, "지원하지 않는 Prego facade contract version입니다");
+  assert.equal(
+    contract.version,
+    2,
+    "지원하지 않는 Prego facade contract version입니다",
+  );
   assert.deepEqual(
     contract.mcpTools?.map((tool) => tool.tool),
     FACADE_TOOLS,
     "공개 MCP tool은 capability discovery, read, destructive update 세 개여야 합니다",
   );
   assert.deepEqual(
-    contract.mcpTools.map(({ tool, effect, destructive }) => ({ tool, effect, destructive })),
+    contract.mcpTools.map(({ tool, effect, destructive }) => ({
+      tool,
+      effect,
+      destructive,
+    })),
     [
       { tool: "prego_capabilities", effect: "discovery", destructive: false },
       { tool: "prego_read", effect: "read", destructive: false },
@@ -113,9 +122,9 @@ function pluginSkillIds() {
 function skillToolReferences(skillPath) {
   return [
     ...new Set(
-      [...readFileSync(skillPath, "utf8").matchAll(/`(prego_[a-z0-9_]+)`/g)].map(
-        (match) => match[1],
-      ),
+      [
+        ...readFileSync(skillPath, "utf8").matchAll(/`(prego_[a-z0-9_]+)`/g),
+      ].map((match) => match[1]),
     ),
   ].sort();
 }
@@ -130,19 +139,30 @@ function assertSkills(contract) {
     "plugin skill 목록이 facade contract와 다릅니다",
   );
   for (const id of SHARED_SKILL_IDS) {
-    const source = readFileSync(join(PLUGIN_ROOT, "skills", id, "SKILL.md"), "utf8");
-    assert.match(source, /referenceSkills/, `${id}: returned referenceSkills를 안내해야 합니다`);
+    const source = readFileSync(
+      join(PLUGIN_ROOT, "skills", id, "SKILL.md"),
+      "utf8",
+    );
+    assert.match(
+      source,
+      /referenceSkills/,
+      `${id}: returned referenceSkills를 안내해야 합니다`,
+    );
   }
   const allowedCapabilityIds = new Set(
     contract.capabilities.map((capability) => capability.id),
   );
   for (const skill of contract.skills) {
-    const source = readFileSync(join(PLUGIN_ROOT, "skills", skill.id, "SKILL.md"), "utf8");
+    const source = readFileSync(
+      join(PLUGIN_ROOT, "skills", skill.id, "SKILL.md"),
+      "utf8",
+    );
     const actualTools = skillToolReferences(
       join(PLUGIN_ROOT, "skills", skill.id, "SKILL.md"),
     );
     assert.ok(
-      actualTools.includes("prego_capabilities") && actualTools.includes("prego_read"),
+      actualTools.includes("prego_capabilities") &&
+        actualTools.includes("prego_read"),
       `${skill.id}: capability discovery와 generic read를 모두 안내해야 합니다`,
     );
     assert.ok(
@@ -157,8 +177,16 @@ function assertSkills(contract) {
       skill.capabilities.every((id) => source.includes(`\`${id}\``)),
       `${skill.id}: 사용 capability ID를 skill에 명시해야 합니다`,
     );
-    assert.match(source, /\$prego-interpretation/, `${skill.id}: 공통 해석 skill을 참조해야 합니다`);
-    assert.match(source, /referenceSkills/, `${skill.id}: returned referenceSkills를 안내해야 합니다`);
+    assert.match(
+      source,
+      /\$prego-interpretation/,
+      `${skill.id}: 공통 해석 skill을 참조해야 합니다`,
+    );
+    assert.match(
+      source,
+      /referenceSkills/,
+      `${skill.id}: returned referenceSkills를 안내해야 합니다`,
+    );
   }
   // 승인 문구의 의미는 시나리오 리뷰에서 검증한다. 특정 영문 문장을 계약으로 고정하지 않는다.
 }
@@ -178,25 +206,48 @@ function checkProvenance(registry, requireOpenApiDigest) {
   const source = registry.openapi?.source;
   const sha256 = registry.openapi?.sha256;
   if (source === "generated-api-fallback") {
-    assert.equal(sha256, null, "generated API fallback에는 OpenAPI digest가 있으면 안 됩니다");
+    assert.equal(
+      sha256,
+      null,
+      "generated API fallback에는 OpenAPI digest가 있으면 안 됩니다",
+    );
     if (requireOpenApiDigest) {
-      throw new Error("real OpenAPI digest가 필요합니다: --openapi <JSON 또는 URL>을 제공하세요");
+      throw new Error(
+        "real OpenAPI digest가 필요합니다: --openapi <JSON 또는 URL>을 제공하세요",
+      );
     }
     return "COVERAGE_GAP: registry는 generated-api-fallback이며 real OpenAPI digest가 없습니다";
   }
-  assert.match(sha256 ?? "", /^[a-f0-9]{64}$/, "real OpenAPI provenance에는 SHA-256이 필요합니다");
+  assert.match(
+    sha256 ?? "",
+    /^[a-f0-9]{64}$/,
+    "real OpenAPI provenance에는 SHA-256이 필요합니다",
+  );
   return null;
 }
 
 /** The pilot document is useful for a FE-only check, never release provenance. */
 export function assertFullOpenApiArtifact(path) {
   const document = readJson(path);
-  const operationCount = Object.values(document.paths ?? {}).flatMap((pathItem) =>
-    Object.values(pathItem ?? {}).filter((operation) => operation?.operationId),
+  const operationCount = Object.values(document.paths ?? {}).flatMap(
+    (pathItem) =>
+      Object.values(pathItem ?? {}).filter(
+        (operation) => operation?.operationId,
+      ),
   ).length;
-  assert.notEqual(document.info?.title, "Prego MCP pilot OpenAPI contract", "pilot-openapi.json은 full OpenAPI provenance로 사용할 수 없습니다");
-  assert.ok(operationCount > 1, "full OpenAPI에는 둘 이상의 operation이 필요합니다");
-  assert.ok(Object.keys(document.components?.schemas ?? {}).length > 0, "full OpenAPI에는 components.schemas가 필요합니다");
+  assert.notEqual(
+    document.info?.title,
+    "Prego MCP pilot OpenAPI contract",
+    "pilot-openapi.json은 full OpenAPI provenance로 사용할 수 없습니다",
+  );
+  assert.ok(
+    operationCount > 1,
+    "full OpenAPI에는 둘 이상의 operation이 필요합니다",
+  );
+  assert.ok(
+    Object.keys(document.components?.schemas ?? {}).length > 0,
+    "full OpenAPI에는 components.schemas가 필요합니다",
+  );
   return document;
 }
 
@@ -205,7 +256,9 @@ export function assertExactCapabilityPairs(label, expected, actual) {
     const normalized = pairs
       .map(({ id, effect }) => ({ id, effect }))
       .sort((left, right) =>
-        `${left.id}:${left.effect}`.localeCompare(`${right.id}:${right.effect}`),
+        `${left.id}:${left.effect}`.localeCompare(
+          `${right.id}:${right.effect}`,
+        ),
       );
     assert.equal(
       new Set(normalized.map(({ id }) => id)).size,
@@ -223,9 +276,17 @@ export function assertExactCapabilityPairs(label, expected, actual) {
 
 function assertFrontendRegistry(contract, frontendRoot, openApi) {
   const registry = frontendRegistry(frontendRoot, openApi);
-  assert.equal(registry.version, 2, "FE registry는 facade capability manifest v2여야 합니다");
+  assert.equal(
+    registry.version,
+    2,
+    "FE registry는 facade capability manifest v2여야 합니다",
+  );
   const records = registry.apps.flatMap((app) =>
-    app.capabilities.map((capability) => ({ ...capability, appCode: app.appCode, foundation: app.foundation })),
+    app.capabilities.map((capability) => ({
+      ...capability,
+      appCode: app.appCode,
+      foundation: app.foundation,
+    })),
   );
   const businessRecords = records.filter((record) => !record.foundation);
   const foundationRecords = records.filter((record) => record.foundation);
@@ -240,42 +301,158 @@ function assertFrontendRegistry(contract, frontendRoot, openApi) {
     foundationRecords,
   );
   for (const record of businessRecords) {
-    assert.ok(record.operation?.operationId, `FE registry의 ${record.id}에 operationId가 없습니다`);
-    assert.ok(record.handoff?.resolver, `FE registry의 ${record.id}에 handoff resolver가 없습니다`);
+    assert.ok(
+      record.operation?.operationId,
+      `FE registry의 ${record.id}에 operationId가 없습니다`,
+    );
+    assert.ok(
+      record.handoff?.resolver,
+      `FE registry의 ${record.id}에 handoff resolver가 없습니다`,
+    );
   }
   const byId = new Map(records.map((record) => [record.id, record]));
   const foundation = byId.get("company.context.read");
-  assert.ok(foundation?.foundation, "company context는 FE registry의 foundation capability여야 합니다");
+  assert.ok(
+    foundation?.foundation,
+    "company context는 FE registry의 foundation capability여야 합니다",
+  );
   return registry;
 }
 
 function backendCatalog(backendRoot) {
   const source = readFileSync(
-    join(backendRoot, "application/src/main/kotlin/good/hr/api/mcp/PregoMcpTool.kt"),
+    join(
+      backendRoot,
+      "application/src/main/kotlin/good/hr/api/mcp/PregoMcpTool.kt",
+    ),
     "utf8",
   );
-  return [...source.matchAll(/\n {4}[A-Z_]+\(([\s\S]*?)\n {4}\),/g)].map((match) => {
-    const body = match[1];
-    const capabilityId = body.match(/capabilityId = "([^"]+)"/)?.[1];
-    if (!capabilityId) throw new Error("BE PregoMcpTool catalog에 capabilityId가 없습니다");
-    return {
-      id: capabilityId,
-      effect: body.match(/effect = PregoMcpCapabilityEffect\.([A-Z_]+)/)?.[1].toLowerCase() ?? "read",
-    };
-  });
+  return [...source.matchAll(/\n {4}[A-Z_]+\(([\s\S]*?)\n {4}\),/g)].map(
+    (match) => {
+      const body = match[1];
+      const capabilityId = body.match(/capabilityId = "([^"]+)"/)?.[1];
+      if (!capabilityId)
+        throw new Error("BE PregoMcpTool catalog에 capabilityId가 없습니다");
+      return {
+        id: capabilityId,
+        effect:
+          body
+            .match(/effect = PregoMcpCapabilityEffect\.([A-Z_]+)/)?.[1]
+            .toLowerCase() ?? "read",
+      };
+    },
+  );
+}
+
+export function assertConversationScenarios(manifest, contract, sourceText) {
+  assert.equal(manifest.version, 1, "conversation scenario version must be 1");
+  assert.ok(Array.isArray(manifest.scenarios) && manifest.scenarios.length > 0);
+  const skills = new Set(contract.skills.map(({ id }) => id));
+  const capabilities = new Map(
+    contract.capabilities.map(({ id, effect }) => [id, effect]),
+  );
+  const coveredSkills = new Set();
+  const ids = new Set();
+  for (const scenario of manifest.scenarios) {
+    assert.match(scenario.id, /^[a-z0-9][a-z0-9-]{0,63}$/);
+    assert.ok(!ids.has(scenario.id), `duplicate scenario: ${scenario.id}`);
+    ids.add(scenario.id);
+    assert.ok(
+      typeof scenario.question === "string" && scenario.question.trim(),
+    );
+    assert.ok(
+      scenario.skillIds?.length > 0,
+      `${scenario.id}: workflow skill is required`,
+    );
+    for (const skill of scenario.skillIds) {
+      assert.ok(
+        skills.has(skill),
+        `${scenario.id}: unknown workflow skill ${skill}`,
+      );
+      coveredSkills.add(skill);
+    }
+    assert.ok(scenario.sourceScenarioIds?.length > 0);
+    for (const source of scenario.sourceScenarioIds) {
+      assert.match(source, /^MCP-[A-Z0-9-]+$/);
+      assert.ok(
+        sourceText.includes(`\`${source}\``),
+        `${scenario.id}: missing canonical scenario ${source}`,
+      );
+    }
+    assert.ok(
+      scenario.review?.length > 0,
+      `${scenario.id}: independent review criteria required`,
+    );
+    for (const criterion of scenario.review)
+      assert.ok(typeof criterion === "string" && criterion.trim());
+    const expected = scenario.expect;
+    assert.ok(["none", "required"].includes(expected?.updates));
+    for (const key of [
+      "requiredCapabilities",
+      "forbiddenCapabilities",
+      "readAfterUpdate",
+    ]) {
+      assert.ok(
+        Array.isArray(expected[key]),
+        `${scenario.id}: ${key} must be an array`,
+      );
+      for (const capability of expected[key]) {
+        assert.ok(
+          capabilities.has(capability),
+          `${scenario.id}: unknown capability ${capability}`,
+        );
+        if (key === "readAfterUpdate")
+          assert.equal(capabilities.get(capability), "read");
+      }
+    }
+    for (const capability of expected.requiredCapabilities) {
+      assert.ok(
+        !expected.forbiddenCapabilities.includes(capability),
+        `${scenario.id}: contradictory expectation ${capability}`,
+      );
+      if (expected.updates === "none")
+        assert.equal(capabilities.get(capability), "read");
+    }
+    if (expected.updates === "required") {
+      assert.ok(
+        expected.requiredCapabilities.some(
+          (capability) => capabilities.get(capability) === "update",
+        ),
+        `${scenario.id}: required update needs an update capability`,
+      );
+    }
+    if (expected.updates === "none")
+      assert.equal(expected.readAfterUpdate.length, 0);
+  }
+  assert.deepEqual(
+    [...coveredSkills].sort(),
+    [...skills].sort(),
+    "every packaged workflow needs a conversation scenario",
+  );
+  return manifest.scenarios.length;
 }
 
 function assertBackendFacade(backendRoot, contract) {
   const source = execFileSync(
     "rg",
-    ["-l", "prego_(capabilities|read|update)|company.context.read", "application/src/main/kotlin"],
+    [
+      "-l",
+      "prego_(capabilities|read|update)|company.context.read",
+      "application/src/main/kotlin",
+    ],
     { cwd: backendRoot, encoding: "utf8" },
   );
   assert.ok(source.trim(), "BE에 Prego facade MCP 구현이 없습니다");
-  const files = source.trim().split("\n").map((file) => join(backendRoot, file));
+  const files = source
+    .trim()
+    .split("\n")
+    .map((file) => join(backendRoot, file));
   const combined = files.map((file) => readFileSync(file, "utf8")).join("\n");
   for (const tool of FACADE_TOOLS) {
-    assert.ok(combined.includes(`\"${tool}\"`), `BE에 ${tool} facade가 없습니다`);
+    assert.ok(
+      combined.includes(`\"${tool}\"`),
+      `BE에 ${tool} facade가 없습니다`,
+    );
   }
   assertExactCapabilityPairs(
     "BE PregoMcpTool catalog",
@@ -299,18 +476,42 @@ export function checkPregoContract({
   const contract = readJson(CONTRACT_PATH);
   assertContract(contract);
   assertSkills(contract);
-  for (const [label, path] of [["frontend", frontendRoot], ["backend", backendRoot]]) {
+  for (const [label, path] of [
+    ["frontend", frontendRoot],
+    ["backend", backendRoot],
+  ]) {
     if (!existsSync(path)) throw new Error(`${label} root가 없습니다: ${path}`);
   }
   if (requireOpenApiDigest) {
-    assert.ok(openApi && !/^https?:\/\//.test(openApi), "full OpenAPI provenance에는 로컬 artifact가 필요합니다");
+    assert.ok(
+      openApi && !/^https?:\/\//.test(openApi),
+      "full OpenAPI provenance에는 로컬 artifact가 필요합니다",
+    );
     assertFullOpenApiArtifact(openApi);
   }
+  const conversationScenarioCount = assertConversationScenarios(
+    readJson(join(PLUGIN_ROOT, "contracts/conversation-scenarios.json")),
+    contract,
+    readFileSync(
+      join(frontendRoot, "docs/features/core/prego-plugin/scenarios.md"),
+      "utf8",
+    ),
+  );
   const registry = assertFrontendRegistry(contract, frontendRoot, openApi);
   assertBackendFacade(backendRoot, contract);
-  execFileSync(process.execPath, [join(PLUGIN_ROOT, "scripts/sync-response-skills.mjs"), "--backend-root", backendRoot, "--check"], { stdio: "pipe" });
+  execFileSync(
+    process.execPath,
+    [
+      join(PLUGIN_ROOT, "scripts/sync-response-skills.mjs"),
+      "--backend-root",
+      backendRoot,
+      "--check",
+    ],
+    { stdio: "pipe" },
+  );
   return {
     capabilityCount: contract.capabilities.length - 1,
+    conversationScenarioCount,
     coverageGap: checkProvenance(registry, requireOpenApiDigest),
     openApiSha256: registry.openapi?.sha256 ?? null,
   };
@@ -318,7 +519,9 @@ export function checkPregoContract({
 
 function main() {
   const result = checkPregoContract(parseArguments(process.argv.slice(2)));
-  process.stdout.write(`Prego facade contract OK: ${result.capabilityCount} capabilities\n`);
+  process.stdout.write(
+    `Prego facade contract OK: ${result.capabilityCount} capabilities\n`,
+  );
   if (result.coverageGap) process.stdout.write(`${result.coverageGap}\n`);
 }
 

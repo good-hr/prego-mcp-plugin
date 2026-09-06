@@ -22,9 +22,16 @@ import { StringDecoder } from "node:string_decoder";
 import { fileURLToPath } from "node:url";
 
 const SCRIPT_ROOT = dirname(fileURLToPath(import.meta.url));
-const DEFAULT_TOKEN_ENV = "PREGO_PAYROLL_CONVERSATION_BEARER";
+const DEFAULT_TOKEN_ENV = "PREGO_CONVERSATION_BEARER";
+const DEFAULT_MODEL = "gpt-5.6-terra";
 const MODES = new Set(["raw-mcp", "plugin-skill"]);
 const WRITE_POLICIES = new Set(["deny", "allow-explicit-local-fixture"]);
+const REASONING_EFFORTS = new Set(["low", "medium", "high"]);
+const PAYROLL_REFERENCE_WORKFLOWS = new Set([
+  "payroll-operations",
+  "payroll-policy-builder",
+  "workforce-reporting",
+]);
 const TERMINATION_GRACE_MS = 1_000;
 
 function requireIdentifier(name, value) {
@@ -68,9 +75,7 @@ export function requireLoopbackMcpUrl(urlText) {
 
 function privateOutputDirectory(outputDir) {
   if (!outputDir) {
-    const directory = mkdtempSync(
-      join(tmpdir(), "prego-payroll-conversation-"),
-    );
+    const directory = mkdtempSync(join(tmpdir(), "prego-conversation-"));
     chmodSync(directory, 0o700);
     return directory;
   }
@@ -90,6 +95,7 @@ function openPrivateNewFile(path, id) {
 
 function outputFiles(outputDir, id) {
   const files = {
+    questionPath: join(outputDir, `${id}.question.md`),
     answerPath: join(outputDir, `${id}.answer.md`),
     jsonlPath: join(outputDir, `${id}.jsonl`),
     stderrPath: join(outputDir, `${id}.stderr.log`),
@@ -99,23 +105,66 @@ function outputFiles(outputDir, id) {
   return files;
 }
 
-export function loadPluginSkill(skillRoot = join(SCRIPT_ROOT, "..", "skills")) {
-  const root = resolve(skillRoot);
-  const policyBuilder = readFileSync(
-    join(root, "payroll-policy-builder", "SKILL.md"),
-    "utf8",
+function requireSkillIds(skillIds, mode) {
+  if (!Array.isArray(skillIds)) throw new Error("skillIds must be an array");
+  for (const skillId of skillIds) requireIdentifier("skillId", skillId);
+  if (new Set(skillIds).size !== skillIds.length)
+    throw new Error("skillIds must not contain duplicates");
+  if (mode === "plugin-skill" && skillIds.length === 0)
+    throw new Error("plugin-skill mode requires one or more skillIds");
+  if (mode === "raw-mcp" && skillIds.length > 0)
+    throw new Error("raw-mcp mode must not include skillIds");
+  return skillIds;
+}
+
+function packagedWorkflowIds() {
+  const contract = JSON.parse(
+    readFileSync(
+      join(SCRIPT_ROOT, "..", "contracts", "pilot-tools.json"),
+      "utf8",
+    ),
   );
+  return new Set(contract.skills.map((skill) => skill.id));
+}
+
+export function loadPluginSkills(
+  skillIds,
+  skillRoot = join(SCRIPT_ROOT, "..", "skills"),
+) {
+  requireSkillIds(skillIds, "plugin-skill");
+  const root = resolve(skillRoot);
+  const supportedIds = packagedWorkflowIds();
+  for (const skillId of skillIds) {
+    if (!supportedIds.has(skillId))
+      throw new Error(`skillId is not a packaged workflow: ${skillId}`);
+  }
+  const workflows = skillIds.map((skillId) => ({
+    id: skillId,
+    content: readFileSync(join(root, skillId, "SKILL.md"), "utf8"),
+  }));
   const interpretation = readFileSync(
     join(root, "prego-interpretation", "SKILL.md"),
     "utf8",
   );
-  const payrollReference = readFileSync(
-    join(root, "prego-interpretation", "references", "payroll.md"),
-    "utf8",
+  const includePayrollReference = skillIds.some((skillId) =>
+    PAYROLL_REFERENCE_WORKFLOWS.has(skillId),
   );
-  const content = `${policyBuilder}\n\n${interpretation}\n\n# Payroll reference\n\n${payrollReference}`;
+  const payrollReference = includePayrollReference
+    ? readFileSync(
+        join(root, "prego-interpretation", "references", "payroll.md"),
+        "utf8",
+      )
+    : null;
+  const content = [
+    ...workflows.map(
+      ({ id, content: workflow }) => `# Workflow: ${id}\n\n${workflow}`,
+    ),
+    `# Shared interpretation\n\n${interpretation}`,
+    ...(payrollReference ? [`# Payroll reference\n\n${payrollReference}`] : []),
+  ].join("\n\n");
   return {
     root,
+    ids: [...skillIds],
     content,
     sha256: createHash("sha256").update(content).digest("hex"),
   };
@@ -129,11 +178,13 @@ export function makeDeveloperInstruction({
   fixtureScope,
   writePolicy,
   mode,
-  pluginSkill,
+  pluginSkills,
 }) {
   const scope = requireText("fixtureScope", fixtureScope);
   if (!WRITE_POLICIES.has(writePolicy)) throw new Error("invalid writePolicy");
   if (!MODES.has(mode)) throw new Error("invalid mode");
+  if (mode === "plugin-skill" && !pluginSkills)
+    throw new Error("plugin-skill mode requires selected pluginSkills");
   const writeBoundary =
     writePolicy === "deny"
       ? "Do not call update tools."
@@ -146,7 +197,7 @@ export function makeDeveloperInstruction({
     "Do not claim an action succeeded without reporting the returned Prego evidence.",
   ].join("\n");
   return mode === "plugin-skill"
-    ? `${base}\n\nApply the current Prego plugin guidance below exactly as provided:\n\n${(pluginSkill ?? loadPluginSkill()).content}`
+    ? `${base}\n\nApply the selected Prego plugin guidance below exactly as provided:\n\n${pluginSkills.content}`
     : base;
 }
 
@@ -176,8 +227,11 @@ export function buildInvocation({
   answerPath,
   previousThread,
   writePolicy,
+  reasoningEffort = "high",
 }) {
   if (!WRITE_POLICIES.has(writePolicy)) throw new Error("invalid writePolicy");
+  if (!REASONING_EFFORTS.has(reasoningEffort))
+    throw new Error("invalid reasoningEffort");
   const allowsFixtureWrites = writePolicy === "allow-explicit-local-fixture";
   const approvalConfig = allowsFixtureWrites
     ? [
@@ -194,10 +248,10 @@ export function buildInvocation({
     "--ignore-rules",
     "--skip-git-repo-check",
     "-m",
-    "gpt-5.6-terra",
+    DEFAULT_MODEL,
     "--json",
     "-c",
-    'model_reasoning_effort="high"',
+    `model_reasoning_effort=${JSON.stringify(reasoningEffort)}`,
     ...approvalConfig,
     "-c",
     "features.memories=false",
@@ -370,11 +424,63 @@ export function extractTranscript(jsonlText) {
       businessUnknown: 0,
       autoApproved: 0,
       humanApprovalRequired: 0,
+      unfinished: [],
       subsequentReads: [],
     },
   };
-  const completedItemIds = new Set();
-  let updateSeen = false;
+  const callsByItemId = new Map();
+  const callForItem = (item, eventType, observationEvent) => {
+    const itemId = typeof item.id === "string" ? item.id : null;
+    const existing = itemId ? callsByItemId.get(itemId) : null;
+    if (
+      existing &&
+      eventType === "item.completed" &&
+      existing.transportStatus !== "in_progress"
+    ) {
+      return existing;
+    }
+    const transportStatus =
+      eventType === "item.started"
+        ? "in_progress"
+        : item.status === "completed"
+          ? "completed"
+          : item.status === "failed"
+            ? "failed"
+            : "unknown";
+    const business = businessOutcome(item, transportStatus);
+    const { capabilityId, scope } = capabilityContext(item);
+    const call = {
+      sequence: existing?.sequence ?? result.toolCalls.length + 1,
+      startedEvent:
+        eventType === "item.started"
+          ? observationEvent
+          : (existing?.startedEvent ?? null),
+      completedEvent:
+        eventType === "item.completed"
+          ? observationEvent
+          : (existing?.completedEvent ?? null),
+      itemId,
+      server:
+        typeof item.server === "string"
+          ? item.server
+          : (existing?.server ?? null),
+      tool: item.tool ?? "unknown",
+      transportStatus,
+      unfinished: transportStatus === "in_progress",
+      businessStatus: business.status,
+      errorKind: business.errorKind,
+      approvalStatus: approvalOutcome(item),
+      capabilityId,
+      scope,
+    };
+    if (existing) {
+      Object.assign(existing, call);
+      return existing;
+    }
+    result.toolCalls.push(call);
+    if (itemId) callsByItemId.set(itemId, call);
+    return call;
+  };
   for (const line of String(jsonlText).split("\n")) {
     if (!line.trim()) continue;
     let event;
@@ -393,49 +499,36 @@ export function extractTranscript(jsonlText) {
       result.threadId = event.thread_id;
     }
     const item = event.item;
-    // `item.started` is only an in-progress observation. A tool call is counted
-    // once, from its final `item.completed` event.
     if (
-      event.type !== "item.completed" ||
+      !["item.started", "item.completed"].includes(event.type) ||
       !item ||
       item.type !== "mcp_tool_call"
     )
       continue;
-    if (typeof item.id === "string") {
-      if (completedItemIds.has(item.id)) continue;
-      completedItemIds.add(item.id);
-    }
-    const tool = item.tool ?? "unknown";
-    const transportStatus =
-      item.status === "completed"
-        ? "completed"
-        : item.status === "failed"
-          ? "failed"
-          : "unknown";
-    const business = businessOutcome(item, transportStatus);
-    const { capabilityId, scope } = capabilityContext(item);
-    const call = {
-      sequence: result.toolCalls.length + 1,
-      itemId: typeof item.id === "string" ? item.id : null,
-      tool,
-      transportStatus,
-      businessStatus: business.status,
-      errorKind: business.errorKind,
-      approvalStatus: approvalOutcome(item),
-      capabilityId,
-      scope,
-    };
-    result.toolCalls.push(call);
-    if (tool === "prego_update") {
+    callForItem(item, event.type, result.eventCount);
+  }
+  let updateSeen = false;
+  for (const call of result.toolCalls) {
+    if (call.tool === "prego_update") {
       updateSeen = true;
       result.updates.invoked = true;
-      if (transportStatus === "completed")
+      if (call.transportStatus === "completed")
         result.updates.transportCompleted += 1;
-      if (transportStatus === "failed") result.updates.transportFailed += 1;
-      if (business.status === "error") {
+      if (call.transportStatus === "failed")
+        result.updates.transportFailed += 1;
+      if (call.unfinished) {
+        result.updates.unfinished.push({
+          sequence: call.sequence,
+          startedEvent: call.startedEvent,
+          completedEvent: call.completedEvent,
+          server: call.server,
+          capabilityId: call.capabilityId,
+          scope: call.scope,
+        });
+      } else if (call.businessStatus === "error") {
         result.updates.businessErrors.push({
           sequence: call.sequence,
-          errorKind: business.errorKind,
+          errorKind: call.errorKind,
         });
       } else {
         result.updates.businessUnknown += 1;
@@ -445,15 +538,19 @@ export function extractTranscript(jsonlText) {
       if (call.approvalStatus === "human_approval_required") {
         result.updates.humanApprovalRequired += 1;
       }
-    } else if (updateSeen && tool === "prego_read") {
+    } else if (updateSeen && call.tool === "prego_read") {
       result.updates.subsequentReads.push({
         sequence: call.sequence,
-        transportStatus,
-        businessStatus: business.status,
-        errorKind: business.errorKind,
+        startedEvent: call.startedEvent,
+        completedEvent: call.completedEvent,
+        server: call.server,
+        transportStatus: call.transportStatus,
+        unfinished: call.unfinished,
+        businessStatus: call.businessStatus,
+        errorKind: call.errorKind,
         approvalStatus: call.approvalStatus,
-        capabilityId,
-        scope,
+        capabilityId: call.capabilityId,
+        scope: call.scope,
       });
     }
   }
@@ -479,9 +576,14 @@ export function readPreviousConversation(outputDir, previousId, options) {
     "mode",
     "fixtureScope",
     "writePolicy",
-    "pluginSkillSha256",
+    "model",
+    "reasoningEffort",
+    "scenarioId",
+    "scenarioSha256",
+    "skillIds",
+    "skillSha256",
   ]) {
-    if (previous[key] !== options[key]) {
+    if (JSON.stringify(previous[key]) !== JSON.stringify(options[key])) {
       throw new Error(
         `previous conversation cannot be mixed with a different ${key}`,
       );
@@ -500,28 +602,66 @@ function sanitizeAnswer(path, token) {
   chmodSync(path, 0o600);
 }
 
-export async function runPayrollConversation({
+function loadScenario(scenarioId) {
+  if (scenarioId === undefined || scenarioId === null) return null;
+  requireIdentifier("scenarioId", scenarioId);
+  const document = JSON.parse(
+    readFileSync(
+      join(SCRIPT_ROOT, "..", "contracts", "conversation-scenarios.json"),
+      "utf8",
+    ),
+  );
+  if (document.version !== 1 || !Array.isArray(document.scenarios))
+    throw new Error("conversation scenarios must have version 1 and scenarios");
+  const scenario = document.scenarios.find((entry) => entry.id === scenarioId);
+  if (!scenario)
+    throw new Error(`conversation scenario not found: ${scenarioId}`);
+  requireIdentifier("scenario.id", scenario.id);
+  requireText("scenario.question", scenario.question);
+  requireSkillIds(scenario.skillIds, "plugin-skill");
+  return {
+    ...scenario,
+    sha256: createHash("sha256").update(JSON.stringify(scenario)).digest("hex"),
+  };
+}
+
+export async function runConversation({
   id,
   caseId,
   question,
   mcpUrl,
   fixtureScope,
   writePolicy = "allow-explicit-local-fixture",
-  mode = "raw-mcp",
+  mode,
   tokenEnvVar = DEFAULT_TOKEN_ENV,
   previousId,
   outputDir,
   skillRoot,
+  skillIds,
+  scenarioId,
+  reasoningEffort = "high",
   timeoutMs = 300_000,
 } = {}) {
+  const scenario = loadScenario(scenarioId);
+  const resolvedMode = mode ?? (scenario ? "plugin-skill" : "raw-mcp");
+  const resolvedCaseId = scenario ? scenario.id : caseId;
+  if (scenario && caseId !== undefined && caseId !== scenario.id)
+    throw new Error("caseId must match scenarioId when scenarioId is used");
+  const resolvedQuestion = question ?? scenario?.question;
+  const resolvedSkillIds =
+    skillIds ??
+    (resolvedMode === "plugin-skill" ? (scenario?.skillIds ?? []) : []);
   requireIdentifier("id", id);
-  requireIdentifier("caseId", caseId);
-  requireText("question", question);
+  requireIdentifier("caseId", resolvedCaseId);
+  requireText("question", resolvedQuestion);
   requireText("fixtureScope", fixtureScope);
   requireTokenEnvironmentName(tokenEnvVar);
   const normalizedUrl = requireLoopbackMcpUrl(mcpUrl);
   if (!WRITE_POLICIES.has(writePolicy)) throw new Error("invalid writePolicy");
-  if (!MODES.has(mode)) throw new Error("invalid mode");
+  if (!MODES.has(resolvedMode)) throw new Error("invalid mode");
+  requireSkillIds(resolvedSkillIds, resolvedMode);
+  if (!REASONING_EFFORTS.has(reasoningEffort))
+    throw new Error("invalid reasoningEffort");
   if (
     !Number.isInteger(timeoutMs) ||
     timeoutMs < 1_000 ||
@@ -533,16 +673,26 @@ export async function runPayrollConversation({
   if (!token) throw new Error(`${tokenEnvVar} is required in the environment`);
 
   const privateDir = privateOutputDirectory(outputDir);
-  const pluginSkill =
-    mode === "plugin-skill" ? loadPluginSkill(skillRoot) : null;
+  const pluginSkills =
+    resolvedMode === "plugin-skill"
+      ? loadPluginSkills(resolvedSkillIds, skillRoot)
+      : null;
+  const questionSha256 = createHash("sha256")
+    .update(resolvedQuestion)
+    .digest("hex");
   const options = {
     id,
-    caseId,
+    caseId: resolvedCaseId,
     mcpUrl: normalizedUrl,
     fixtureScope,
     writePolicy,
-    mode,
-    pluginSkillSha256: pluginSkill?.sha256 ?? null,
+    mode: resolvedMode,
+    model: DEFAULT_MODEL,
+    reasoningEffort,
+    scenarioId: scenario?.id ?? null,
+    scenarioSha256: scenario?.sha256 ?? null,
+    skillIds: pluginSkills?.ids ?? [],
+    skillSha256: pluginSkills?.sha256 ?? null,
   };
   const previousThread = readPreviousConversation(
     privateDir,
@@ -550,23 +700,27 @@ export async function runPayrollConversation({
     options,
   );
   const files = outputFiles(privateDir, id);
-  const cwd = mkdtempSync(join(tmpdir(), "prego-payroll-agent-"));
+  writeFileSync(files.questionPath, redactText(resolvedQuestion, token), {
+    mode: 0o600,
+  });
+  const cwd = mkdtempSync(join(tmpdir(), "prego-conversation-agent-"));
   chmodSync(cwd, 0o700);
   const developerInstruction = makeDeveloperInstruction({
     fixtureScope,
     writePolicy,
-    mode,
-    pluginSkill,
+    mode: resolvedMode,
+    pluginSkills,
   });
   const args = buildInvocation({
     cwd,
-    question,
+    question: resolvedQuestion,
     mcpUrl: normalizedUrl,
     tokenEnvVar,
     developerInstruction,
     answerPath: files.answerPath,
     previousThread,
     writePolicy,
+    reasoningEffort,
   });
   const startedAt = Date.now();
   let timedOut = false;
@@ -650,17 +804,25 @@ export async function runPayrollConversation({
   const transcript = extractTranscript(readFileSync(files.jsonlPath, "utf8"));
   const summary = {
     id,
-    caseId,
+    caseId: resolvedCaseId,
     mcpUrl: normalizedUrl,
     fixtureScope,
     writePolicy,
-    mode,
-    pluginSkill: pluginSkill
-      ? { root: pluginSkill.root, sha256: pluginSkill.sha256 }
+    mode: resolvedMode,
+    pluginSkills: pluginSkills
+      ? {
+          root: pluginSkills.root,
+          ids: pluginSkills.ids,
+          sha256: pluginSkills.sha256,
+        }
       : null,
-    pluginSkillSha256: pluginSkill?.sha256 ?? null,
-    model: "gpt-5.6-terra",
-    reasoningEffort: "high",
+    model: DEFAULT_MODEL,
+    reasoningEffort,
+    questionSha256,
+    scenarioId: scenario?.id ?? null,
+    scenarioSha256: scenario?.sha256 ?? null,
+    skillIds: pluginSkills?.ids ?? [],
+    skillSha256: pluginSkills?.sha256 ?? null,
     resumedFromThreadId: previousThread,
     process: {
       status: timedOut
@@ -689,7 +851,6 @@ export async function runPayrollConversation({
 
 function parseCli(args) {
   const result = {
-    mode: "raw-mcp",
     writePolicy: "allow-explicit-local-fixture",
   };
   for (let index = 0; index < args.length; index += 1) {
@@ -710,12 +871,20 @@ function parseCli(args) {
       "--previous-id": "previousId",
       "--output-dir": "outputDir",
       "--skill-root": "skillRoot",
+      "--skills": "skillIds",
+      "--scenario-id": "scenarioId",
+      "--reasoning-effort": "reasoningEffort",
       "--timeout-ms": "timeoutMs",
     }[option];
     if (!key || args[index + 1] === undefined)
       throw new Error(`unknown or incomplete option: ${option}`);
+    const value = args[index + 1];
     result[key] =
-      key === "timeoutMs" ? Number(args[index + 1]) : args[index + 1];
+      key === "timeoutMs"
+        ? Number(value)
+        : key === "skillIds"
+          ? value.split(",").map((skillId) => skillId.trim())
+          : value;
     index += 1;
   }
   return result;
@@ -723,9 +892,10 @@ function parseCli(args) {
 
 function usage() {
   return [
-    "Usage: node scripts/prego-payroll-conversation-runner.mjs --id <run-id> --case-id <case-id> --question <user-question> --mcp-url <loopback-url> --fixture-scope <scope> [options]",
+    "Usage: node scripts/prego-conversation-runner.mjs --id <run-id> --mcp-url <loopback-url> --fixture-scope <scope> (--case-id <case-id> --question <user-question> | --scenario-id <id>) [options]",
     "",
-    "Options: --mode raw-mcp|plugin-skill; --write-policy deny|allow-explicit-local-fixture; --token-env <ENV>; --previous-id <run-id>; --output-dir <private-dir>; --skill-root <skills-dir>; --timeout-ms <ms>",
+    "Options: --mode raw-mcp|plugin-skill; --skills <comma-separated-workflows>; --scenario-id <id>; --reasoning-effort low|medium|high; --write-policy deny|allow-explicit-local-fixture; --token-env <ENV>; --previous-id <run-id>; --output-dir <private-dir>; --skill-root <skills-dir>; --timeout-ms <ms>",
+    "Plugin-skill mode requires --skills unless --scenario-id supplies skillIds. Scenario questions may be overridden with --question.",
     `The bearer is read only from ${DEFAULT_TOKEN_ENV} (or --token-env), never from CLI arguments or files.`,
   ].join("\n");
 }
@@ -736,13 +906,14 @@ async function main() {
     process.stdout.write(`${usage()}\n`);
     return;
   }
-  const summary = await runPayrollConversation(options);
+  const summary = await runConversation(options);
   // A completed process is intentionally not reported as a business PASS.
   process.stdout.write(
     `${JSON.stringify({ id: summary.id, process: summary.process.status, outputs: summary.outputs })}\n`,
   );
   if (summary.process.status === "CANCELLED")
     process.exitCode = summary.process.signal === "SIGINT" ? 130 : 143;
+  else if (summary.process.status !== "COMPLETED") process.exitCode = 1;
 }
 
 if (import.meta.url === new URL(`file://${process.argv[1]}`).href) {
