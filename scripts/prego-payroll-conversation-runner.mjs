@@ -150,8 +150,15 @@ export function makeDeveloperInstruction({
     : base;
 }
 
-function childEnvironment(tokenEnvVar, token) {
-  const inherited = ["PATH", "HOME", "TMPDIR", "SSL_CERT_FILE", "SSL_CERT_DIR"];
+export function childEnvironment(tokenEnvVar, token) {
+  const inherited = [
+    "PATH",
+    "HOME",
+    "CODEX_HOME",
+    "TMPDIR",
+    "SSL_CERT_FILE",
+    "SSL_CERT_DIR",
+  ];
   const env = {};
   for (const name of inherited)
     if (process.env[name]) env[name] = process.env[name];

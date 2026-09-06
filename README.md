@@ -167,6 +167,9 @@ node scripts/prego-payroll-conversation-runner.mjs \
 항목 ID·수식·급여유형·적용 기간과 월별 계산 결과를 재조회해야 한다. 실행 종료나
 답변의 “저장했습니다” 문구는 저장 성공 증거가 아니다.
 
+timeout 종료는 macOS와 Linux의 process group을 정리한다. Windows에서 그 자식
+프로세스 트리 정리는 구현하거나 검증하지 않았다.
+
 ```sh
 node --test scripts/*.node-test.mjs
 ```

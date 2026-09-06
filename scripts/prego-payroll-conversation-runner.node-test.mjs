@@ -13,6 +13,7 @@ import { test } from "node:test";
 
 import {
   buildInvocation,
+  childEnvironment,
   createRedactingTransform,
   extractTranscript,
   loadPluginSkill,
@@ -30,6 +31,16 @@ async function assertProcessExited(pid, timeoutMs = 1_000) {
     } catch (error) {
       if (error.code === "ESRCH") return;
       throw error;
+    }
+    if (process.platform === "linux") {
+      try {
+        const stat = readFileSync(`/proc/${pid}/stat`, "utf8");
+        const processState = stat.slice(stat.lastIndexOf(") ") + 2).charAt(0);
+        if (processState === "Z") return;
+      } catch (error) {
+        if (error.code === "ENOENT") return;
+        throw error;
+      }
     }
     if (Date.now() >= deadline) assert.fail(`process ${pid} is still alive`);
     await new Promise((resolve) => setTimeout(resolve, 25));
@@ -168,6 +179,19 @@ test("deny write policy keeps the isolated agent read-only", () => {
   );
   assert.equal(args.includes("--approve-for-me"), false);
   assert.equal(args.includes('approval_policy="never"'), true);
+});
+
+test("child environment retains a custom CODEX_HOME", () => {
+  const originalCodexHome = process.env.CODEX_HOME;
+  const customCodexHome = "/tmp/custom-codex-home";
+  process.env.CODEX_HOME = customCodexHome;
+  try {
+    const env = childEnvironment("PREGO_CONVERSATION_TEST_TOKEN", "");
+    assert.equal(env.CODEX_HOME, customCodexHome);
+  } finally {
+    if (originalCodexHome === undefined) delete process.env.CODEX_HOME;
+    else process.env.CODEX_HOME = originalCodexHome;
+  }
 });
 
 test("plugin-skill snapshot contains its payroll reference and stable digest", () => {
