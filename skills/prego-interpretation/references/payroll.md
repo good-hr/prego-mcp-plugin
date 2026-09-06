@@ -62,3 +62,38 @@ For omitted payroll read/draft periods, an explicit user period wins, then known
 company payroll/work rules. Otherwise use the company-local date: before the 15th,
 previous month; from the 15th, current month. Briefly state the assumed period;
 never use that assumption alone to set a real write's effective date.
+
+## Setting an allowance policy
+
+A request to set up or change an allowance includes saving the resolved policy.
+Read existing items and payroll types first, reuse an appropriate item, and
+preserve unrelated classifications and fields. Resolve IDs from returned data.
+Choose a payroll type from the user's meaning and the company rules; an item
+called a bonus can still belong in regular monthly payroll. Multiple returned
+types alone do not require a question when the request uniquely identifies one.
+
+Separate amount, eligible group, recurring condition, effective start and
+payroll-type links. Fixed attribution months can use the formula catalog's
+numeric month variable. They are not the date of payment: a next-month payday
+needs a different attribution month. Lunar holidays and the payday before them
+must not be silently replaced with fixed months. If that calendar condition is
+unsupported, offer a concrete supported alternative and resolve the choice.
+
+Discover the formula catalog, then test the relevant conditions with a few
+permission-visible samples. Month rules need both included and excluded months;
+role rules need target and non-target roles. Use the existing item ID for an edit
+when the schema supports it. A type-link change may need a post-save simulation;
+state that boundary instead of creating duplicate items. Check formula errors
+and individual amounts that shadow the formula, not just syntax validity.
+
+Preview is non-persistent; that does not prohibit the separate discovered
+payment-item create/update action. Once the requested policy and effective start
+are resolved, execute the authorized save and read back formula, type links,
+period and unchanged fields. A draft, a link or an accepted tool call is not
+proof of persistence. Report a partial result if a later step failed.
+
+The saved rule is consumed by a subsequent current payroll-preparation revision.
+Preparation completion owns activation of the calculation snapshot. Policy setup
+alone does not authorize completing preparation, recalculating existing results,
+confirming payroll or making a bank payment. Describe saved policy and tested
+amounts separately from those later stages, using HR terms and the returned link.

@@ -10,7 +10,7 @@ Prego의 인사·급여 데이터를 ChatGPT, Codex, Claude, Gemini CLI에서 �
 - `workforce-reporting`: 조직·직위·직무 인원현황 보고서와 인원·인건비 변화 분석
 - `hr-control-tower`: HR 우선순위·입퇴사 준비, 계약 만료, 개인 휴가·근태 기록 확인
 - `payroll-operations`: 급여 준비·계산·정산·확정과 후속 업무, 상태 확인과 명시적으로 요청한 실행
-- `payroll-policy-builder`: 지급항목 계산식 초안 검증과 비저장 표본 테스트
+- `payroll-policy-builder`: 지급·공제 정책과 월 조건 계산식 검증, 요청한 설정 저장·재조회
 - `onboarding-import`: 고객 원본에서 필요한 공식 사원·급여 업로드 파일 생성과 비저장 사전검증
 
 플러그인은 `https://api.prego.team/mcp`만 사용한다. Prego 로그인과 외부 앱 연결 확인을 거치며, 접근 가능한 회사·기능·데이터 범위는 매 discovery와 호출마다 Prego가 다시 확인한다. `권한 관리` 권한이 있는 사용자는 `외부 서비스 연동 > AI 연결`에서 서비스별 조회·수정 허용 상태를 관리하며, 연결은 외부 서비스에서도 해제할 수 있다. 설정·실행 지원 여부와 입력은 현재 서버의 capability를 따른다. 정책 preview와 온보딩 사전검증은 비저장이며, 실제 은행 지급·외부 신고·전자서명·권한 변경은 지원하지 않는다. 화면 링크는 제품이 소비하는 회사·기간·탭·필터만 복원한다.
@@ -32,11 +32,11 @@ Prego는 내부 API별 도구를 공개하지 않는다. 스킬과 agent는 먼�
 그 형식에 맞춰 `prego_read` 또는 `prego_update`를 호출한다.
 허용되지 않았거나 반환되지 않은 capability ID는 호출할 수 없다.
 
-| Tool | 용도 | 확인 방식 |
-| --- | --- | --- |
-| `prego_capabilities` | 회사 맥락과 권한 기반 capability 탐색 | 조회 |
-| `prego_read` | 허용된 조회 capability 실행 | 조회 |
-| `prego_update` | 허용된 설정 변경·마감·계산·정산·확정 | 명시한 작업과 기존 업무 상태·권한 검사 |
+| Tool                 | 용도                                  | 확인 방식                              |
+| -------------------- | ------------------------------------- | -------------------------------------- |
+| `prego_capabilities` | 회사 맥락과 권한 기반 capability 탐색 | 조회                                   |
+| `prego_read`         | 허용된 조회 capability 실행           | 조회                                   |
+| `prego_update`       | 허용된 설정 변경·마감·계산·정산·확정  | 명시한 작업과 기존 업무 상태·권한 검사 |
 
 `prego_update`는 destructive MCP tool이다. agent는 현재 값과 대상·기간을 확인하고
 사용자가 요청한 변경만 실행한다. annotation은 client의 확인을 돕는 힌트이며
@@ -129,4 +129,47 @@ node scripts/check-prego-contract-runtime.mjs \
   --frontend-root "$GOOD_HR_FRONTEND_ROOT" \
   --backend-root "$GOOD_HR_BACKEND_ROOT" \
   --openapi-url "http://127.0.0.1:${OPENAPI_PORT}/v3/api-docs"
+```
+
+### 급여 설정 대화 실험
+
+`prego-payroll-conversation-runner.mjs`는 저장소·메모리·다른 연결 없이 새 에이전트에
+사용자 질문을 전달한다. `raw-mcp`는 도구 응답만, `plugin-skill`은 현재 급여 설정
+스킬도 제공한다. 로컬 OAuth bearer는 `PREGO_PAYROLL_CONVERSATION_BEARER` 환경변수로만
+전달한다. 운영 endpoint는 거부하며, 읽을 수 있는 로컬 회사와 쓰기를 허용할 전용
+자료를 `--fixture-scope`로 명시한다. 이 경계는 에이전트 지침이며 서버 권한을 대신하지
+않으므로 실제 고객 데이터가 없는 로컬 테스트 환경만 사용한다.
+
+쓰기 허용 레인은 각 실행에 `approval_policy=on-request`,
+`approvals_reviewer=auto_review`, `sandbox_mode=workspace-write`를 설정한다.
+destructive MCP는 파일 sandbox와 별도로 승인이 필요하므로 `approval_policy=never`로
+쓰기 실험을 실행하지 않는다. 검토 전용 레인은 read-only/never를 유지한다. 심사
+거부·timeout은 설정 저장 성공으로 처리하지 않는다. [Codex 승인 계약](https://learn.chatgpt.com/docs/agent-approvals-security)을 따른다.
+
+```sh
+node scripts/prego-payroll-conversation-runner.mjs \
+  --id holiday-raw-1 --case-id holiday-policy \
+  --question '매년 1월과 9월에 60만원씩 지급하도록 기존 테스트 명절수당을 설정해줘.' \
+  --mcp-url "http://localhost:${MCP_PORT}/mcp" \
+  --fixture-scope '지정 로컬 테스트 회사의 설정과 소수 표본은 조회 가능. 쓰기는 전용 테스트 명절수당만 허용.' \
+  --mode raw-mcp --output-dir "$MCP_EVIDENCE_DIR"
+```
+
+후속 질문은 같은 조건에서 새 `--id`와 `--previous-id holiday-raw-1`로 전달한다.
+별도 사례나 수정 전후 비교는 새 대화로 시작하고 같은 초기 fixture를 사용한다.
+스킬 비교는 `--mode plugin-skill`, 이전 스킬 snapshot은 `--skill-root`로 선택한다.
+환경 자체가 조회 전용이면 `--write-policy deny`를 사용한다. 에이전트가 사용자의
+“검토만” 요청을 지키는지 평가할 때는 전용 fixture의 쓰기를 허용한 상태에서 변경
+호출이 없고 저장값이 그대로인지 확인한다. 도구 차단을 의도 준수로 판정하지 않는다.
+
+출력은 private JSONL·답변·summary다. summary는 transport 완료·business 오류·쓰기 후
+후속 조회를 구분하며 업무 PASS를 자동 판정하지 않는다. 독립 판정자가 실제 저장된
+항목 ID·수식·급여유형·적용 기간과 월별 계산 결과를 재조회해야 한다. 실행 종료나
+답변의 “저장했습니다” 문구는 저장 성공 증거가 아니다.
+
+timeout 종료는 macOS와 Linux의 process group을 정리한다. Windows에서 그 자식
+프로세스 트리 정리는 구현하거나 검증하지 않았다.
+
+```sh
+node --test scripts/*.node-test.mjs
 ```
