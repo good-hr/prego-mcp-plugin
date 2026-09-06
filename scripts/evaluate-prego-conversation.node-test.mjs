@@ -566,3 +566,28 @@ test("CLI records fresh summary and scenario provenance in a private report", ()
     rmSync(directory, { recursive: true, force: true });
   }
 });
+
+test("readback follows every required update, not an earlier unrelated write", () => {
+  const write = (n, capabilityId) =>
+    call(n, { tool: "prego_update", capabilityId, scope: companyA });
+  const read = (n) =>
+    call(n, {
+      tool: "prego_read",
+      capabilityId: "payroll.payment-item.list.read",
+      scope: companyA,
+    });
+  const required = "payroll.payment-item.create";
+  for (const first of ["payroll.payment-item.update", required]) {
+    const calls = [write(1, first), read(2), write(3, required)];
+    assert.equal(
+      evaluateConversation({ scenario, summary: summary(calls) })
+        .mechanicalVerdict,
+      "FAIL",
+    );
+    assert.equal(
+      evaluateConversation({ scenario, summary: summary([...calls, read(4)]) })
+        .mechanicalVerdict,
+      "PASS",
+    );
+  }
+});

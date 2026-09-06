@@ -64,6 +64,9 @@ request, discover the matching update capability and its read sibling. Preserve
 the selected settlement and current revision; preparation, calculation, final
 confirmation, and downstream work are separate commands. Poll a returned batch
 through its read capability rather than treating acceptance as completion.
+For a sensitive final-confirmation request, `payroll.result.confirmation.update`
+currently returns `ready_for_review`; it prepares review and neither runs an
+automatic confirmation action nor means confirmation is complete.
 On a blocker or stale version, read the current state and report the next
 supported action instead of bypassing the product guard. Include the returned handoff
 for every completed tool call, even in a short answer, but label it as a general

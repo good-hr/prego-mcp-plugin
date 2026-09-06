@@ -250,6 +250,7 @@ function readAfterUpdateChecks(scenario, calls, usable) {
     (call) =>
       isPregoBusinessCall(call) &&
       call.tool === "prego_update" &&
+      scenario.expect.requiredCapabilities.includes(call.capabilityId) &&
       isCompletedNonError(call),
   );
   return scenario.expect.readAfterUpdate.map((capabilityId) => {
@@ -274,20 +275,20 @@ function readAfterUpdateChecks(scenario, calls, usable) {
       (read) => eventPosition(read.startedEvent) !== null,
     );
     if (
-      timedReads.some(
-        (read) =>
-          isCompletedNonError(read) &&
-          timedUpdates.some(
-            (update) =>
-              read.startedEvent > update.completedEvent &&
-              sameExplicitScope(update.scope, read.scope),
-          ),
+      timedUpdates.length === successfulUpdates.length &&
+      timedUpdates.every((update) =>
+        timedReads.some(
+          (read) =>
+            isCompletedNonError(read) &&
+            read.startedEvent > update.completedEvent &&
+            sameExplicitScope(update.scope, read.scope),
+        ),
       )
     ) {
       return check(
         id,
         "PASS",
-        "completed readback followed the update with the same explicit scope",
+        "completed readback followed every required update with the same explicit scope",
       );
     }
     if (

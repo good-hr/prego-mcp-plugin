@@ -351,6 +351,12 @@ export function assertConversationScenarios(manifest, contract, sourceText) {
   const capabilities = new Map(
     contract.capabilities.map(({ id, effect }) => [id, effect]),
   );
+  const workflowCapabilities = new Map(
+    contract.skills.map(({ id, capabilities: skillCapabilities }) => [
+      id,
+      new Set(skillCapabilities),
+    ]),
+  );
   const coveredSkills = new Set();
   const ids = new Set();
   for (const scenario of manifest.scenarios) {
@@ -364,12 +370,15 @@ export function assertConversationScenarios(manifest, contract, sourceText) {
       scenario.skillIds?.length > 0,
       `${scenario.id}: workflow skill is required`,
     );
+    const selectedCapabilities = new Set();
     for (const skill of scenario.skillIds) {
       assert.ok(
         skills.has(skill),
         `${scenario.id}: unknown workflow skill ${skill}`,
       );
       coveredSkills.add(skill);
+      for (const capability of workflowCapabilities.get(skill))
+        selectedCapabilities.add(capability);
     }
     assert.ok(scenario.sourceScenarioIds?.length > 0);
     for (const source of scenario.sourceScenarioIds) {
@@ -403,6 +412,11 @@ export function assertConversationScenarios(manifest, contract, sourceText) {
         );
         if (key === "readAfterUpdate")
           assert.equal(capabilities.get(capability), "read");
+        if (key !== "forbiddenCapabilities")
+          assert.ok(
+            selectedCapabilities.has(capability),
+            `${scenario.id}: capability ${capability} is not declared by selected workflow`,
+          );
       }
     }
     for (const capability of expected.requiredCapabilities) {
