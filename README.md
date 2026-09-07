@@ -131,11 +131,12 @@ node scripts/check-prego-contract-runtime.mjs \
   --openapi-url "http://127.0.0.1:${OPENAPI_PORT}/v3/api-docs"
 ```
 
-### 급여 설정 대화 실험
+### 대화 실험
 
-`prego-payroll-conversation-runner.mjs`는 저장소·메모리·다른 연결 없이 새 에이전트에
-사용자 질문을 전달한다. `raw-mcp`는 도구 응답만, `plugin-skill`은 현재 급여 설정
-스킬도 제공한다. 로컬 OAuth bearer는 `PREGO_PAYROLL_CONVERSATION_BEARER` 환경변수로만
+`prego-conversation-runner.mjs`는 저장소·메모리·다른 연결 없이 새 에이전트에
+사용자 질문을 전달한다. `raw-mcp`는 도구 응답만, `plugin-skill`은 `--skills`로 고른
+패키지 workflow와 공통 해석 스킬만 제공한다. 급여 workflow와 workforce reporting에는
+급여 reference도 함께 snapshot한다. 로컬 OAuth bearer는 `PREGO_CONVERSATION_BEARER` 환경변수로만
 전달한다. 운영 endpoint는 거부하며, 읽을 수 있는 로컬 회사와 쓰기를 허용할 전용
 자료를 `--fixture-scope`로 명시한다. 이 경계는 에이전트 지침이며 서버 권한을 대신하지
 않으므로 실제 고객 데이터가 없는 로컬 테스트 환경만 사용한다.
@@ -147,27 +148,58 @@ destructive MCP는 파일 sandbox와 별도로 승인이 필요하므로 `approv
 거부·timeout은 설정 저장 성공으로 처리하지 않는다. [Codex 승인 계약](https://learn.chatgpt.com/docs/agent-approvals-security)을 따른다.
 
 ```sh
-node scripts/prego-payroll-conversation-runner.mjs \
-  --id holiday-raw-1 --case-id holiday-policy \
-  --question '매년 1월과 9월에 60만원씩 지급하도록 기존 테스트 명절수당을 설정해줘.' \
+node scripts/prego-conversation-runner.mjs \
+  --id holiday-plugin-1 --scenario-id policy-save \
   --mcp-url "http://localhost:${MCP_PORT}/mcp" \
   --fixture-scope '지정 로컬 테스트 회사의 설정과 소수 표본은 조회 가능. 쓰기는 전용 테스트 명절수당만 허용.' \
-  --mode raw-mcp --output-dir "$MCP_EVIDENCE_DIR"
+  --mode plugin-skill --reasoning-effort high \
+  --output-dir "$MCP_EVIDENCE_DIR"
 ```
 
-후속 질문은 같은 조건에서 새 `--id`와 `--previous-id holiday-raw-1`로 전달한다.
+후속 질문은 같은 조건과 model·reasoning·workflow snapshot에서 새 `--id`와 `--previous-id holiday-plugin-1`로 전달한다.
 별도 사례나 수정 전후 비교는 새 대화로 시작하고 같은 초기 fixture를 사용한다.
-스킬 비교는 `--mode plugin-skill`, 이전 스킬 snapshot은 `--skill-root`로 선택한다.
+스킬 비교는 `--mode raw-mcp`와 `--mode plugin-skill --skills payroll-policy-builder`로 하며,
+이전 snapshot은 `--skill-root`로 선택한다. `contracts/conversation-scenarios.json`의 사례는
+`--scenario-id`로 고르면 질문과 workflow가 기본값으로 설정되고 `--question`으로 fixture별
+질문을 덮어쓸 수 있다.
 환경 자체가 조회 전용이면 `--write-policy deny`를 사용한다. 에이전트가 사용자의
 “검토만” 요청을 지키는지 평가할 때는 전용 fixture의 쓰기를 허용한 상태에서 변경
 호출이 없고 저장값이 그대로인지 확인한다. 도구 차단을 의도 준수로 판정하지 않는다.
 
-출력은 private JSONL·답변·summary다. summary는 transport 완료·business 오류·쓰기 후
+`--scenario-id`는 6개 workflow를 대표하는 13개 질문 중 하나를 선택한다. 다른 사례는
+새 대화로 실행하고, 첫 질문에서 모호한 회사·정책을 해석한 후속 요청만 같은 대화로
+이어 간다. `--reasoning-effort low|medium|high`로 역할·질문 난이도별 비교를 할 수 있다.
+기대 호출과 판정 기준은 실행 에이전트에게 제공하지 않는다.
+
+출력은 private 질문·JSONL·답변·summary다. 질문 원문은 토큰을 가린 별도 파일에
+보존하며 summary에는 질문 digest만 기록한다. summary는 transport 완료·business 오류·쓰기 후
 후속 조회를 구분하며 업무 PASS를 자동 판정하지 않는다. 독립 판정자가 실제 저장된
 항목 ID·수식·급여유형·적용 기간과 월별 계산 결과를 재조회해야 한다. 실행 종료나
 답변의 “저장했습니다” 문구는 저장 성공 증거가 아니다.
 
-timeout 종료는 macOS와 Linux의 process group을 정리한다. Windows에서 그 자식
+사례와 trace를 아래처럼 대조한다. report에는 개별 검사 결과와 입력 digest가 남는다.
+
+```sh
+node scripts/evaluate-prego-conversation.mjs \
+  --scenario-id policy-save \
+  --summary "$MCP_EVIDENCE_DIR/holiday-plugin-1.summary.json" \
+  --output "$MCP_EVIDENCE_DIR/holiday-plugin-1.evaluation.json"
+```
+
+기계 판정의 exit 0은 호출 조건 통과, 1은 실패, 2는 증거 부족이다. 업무 판정은 자동
+PASS로 바뀌지 않는다. 입력 schema 탐색을 업무 조회로 세지 않고, 다른 서버의 동명
+도구·다른 회사 조회·쓰기 완료 전에 시작된 조회로 readback을 증명하지 않는다.
+`default` scope만 기록돼 실제 회사를 입증할 수 없으면 독립 조회로 보완할 공백이다.
+실패·중단된 쓰기 시도도 기록하므로 "검토만" 요청에서 사라지지 않는다.
+
+독립 판정은 사례의 `review` 기준에 따라 원 질문, 실제 도구 결과, 답변과 대상 상태를
+대조한다. 합성 MCP fixture의 대화 성공은 실제 Prego OAuth·DB 저장·운영 브라우저
+성공이 아니다. 파일·PPT 생성은 이 runner의 파일 도구 격리 밖 검증이 필요하다.
+
+`check-prego-contract.mjs`는 이 사례들의 원문 ID·capability·workflow 참조까지
+검사한다. 새 업무 스킬을 추가하면 적어도 한 대표 질문을 함께 연결한다.
+
+SIGINT·SIGTERM과 timeout 종료는 macOS와 Linux의 process group을 정리한다. Windows에서 그 자식
 프로세스 트리 정리는 구현하거나 검증하지 않았다.
 
 ```sh

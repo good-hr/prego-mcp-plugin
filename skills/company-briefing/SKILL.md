@@ -74,14 +74,16 @@ Return, in order:
 1. one factual sentence describing the Prego HR scope; add an overall
    assessment only when a returned benchmark supports it;
 2. at most three material workforce or operating signals;
-3. `Decision needed`, `Monitor`, and `Unknown` items supported by the results;
+3. any actual decision, operational follow-up, and material uncertainty supported
+   by the results, using the user's language;
 4. company scope, reference dates, coverage, truncation, and returned handoffs.
 
-Copy each returned handoff URL verbatim. Do not rebuild it or shorten a full
+Present distinct returned handoffs as labeled links; show an identical URL only
+once. Copy its URL verbatim. Do not rebuild it or shorten a full
 `referenceDate` to a month. If the exact URL cannot be preserved, omit it
 instead of emitting a modified link.
 
-Use `Decision needed` only for an actual choice or tradeoff; otherwise write
-`Decision needed: none` and place operational checks under `Monitor`.
+Mention a decision only for an actual choice or tradeoff. Omit empty decision
+sections and keep operational checks separate from management decisions.
 Do not create a deck unless the user explicitly requests one; detailed
 workforce reports belong to `$workforce-reporting`.

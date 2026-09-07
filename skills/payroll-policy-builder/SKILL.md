@@ -60,6 +60,22 @@ not expose names, employee numbers or email addresses unless the user explicitly
 requests those identifiers. If the proposed payroll-type link cannot yet be simulated, distinguish
 that limitation and verify the stored item in that type after the requested save.
 
+For an existing item, explain `beforeAmount`, `candidateAmount` and `difference`
+from the same person's preview context. The baseline is a simulation using current
+saved settings, not a historically paid amount. A missing baseline or difference
+means comparison is unavailable: report `beforeErrorMessage` or the sample error,
+never substitute zero or derive a delta from an invalid or shadowed formula.
+The item list and formula catalog describe rules, not evaluated sample amounts.
+Do not reconstruct missing sample amounts or deltas from those rules, or present
+hypothetical rule amounts as if the failed preview verified them.
+When a sample comparison is unavailable, lead with “comparison unavailable” and
+report only its returned candidate amount, reason, and sample coverage. Do not
+append a numeric before/after example or “rule-level” increase/decrease derived
+from the catalog; that would answer a different question from the sample impact.
+A negative difference is a reduction. Compare only this payment item, not take-home
+pay, total payroll or company cost. A review-only request ends with the comparison
+and its limits; do not save it.
+
 ## Complete the requested setting
 
 “Set up”, “add”, and “change” are save requests. Once the policy is resolved,

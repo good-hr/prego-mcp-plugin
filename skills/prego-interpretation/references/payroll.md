@@ -86,6 +86,21 @@ when the schema supports it. A type-link change may need a post-save simulation;
 state that boundary instead of creating duplicate items. Check formula errors
 and individual amounts that shadow the formula, not just syntax validity.
 
+For an existing payment item, preview's `beforeAmount` is the current saved rule
+simulated for the same person, attribution month, payroll type and sequence as
+`candidateAmount`. It is not a historical paid amount. Use the returned
+`difference` only when available; a missing baseline or delta is unknown, not
+zero. Explain `beforeErrorMessage`, sample errors and formula shadowing without
+inventing a comparison. Item lists and formula catalogs describe rules, not
+sample evaluation evidence: do not reconstruct missing amounts or deltas from
+those rules or substitute hypothetical amounts for failed sample results.
+For an unavailable comparison, lead with that limitation and report only the
+returned candidate amount, reason and sample coverage. Do not append a numeric
+before/after example or a “rule-level” increase/decrease from the catalog.
+A negative delta means a decrease in this item. Do not
+extrapolate samples to company cost or take-home pay. Review-only requests do not
+authorize a save.
+
 Preview is non-persistent; that does not prohibit the separate discovered
 payment-item create/update action. Once the requested policy and effective start
 are resolved, execute the authorized save and read back formula, type links,

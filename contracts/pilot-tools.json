@@ -1,7 +1,11 @@
 {
   "version": 2,
   "mcpTools": [
-    { "tool": "prego_capabilities", "effect": "discovery", "destructive": false },
+    {
+      "tool": "prego_capabilities",
+      "effect": "discovery",
+      "destructive": false
+    },
     { "tool": "prego_read", "effect": "read", "destructive": false },
     { "tool": "prego_update", "effect": "update", "destructive": true }
   ],
@@ -72,27 +76,67 @@
   "skills": [
     {
       "id": "company-briefing",
-      "capabilities": ["hr.operations.summary.read", "attendance.operations.summary.read", "workforce.snapshot.read"]
+      "capabilities": [
+        "hr.operations.summary.read",
+        "attendance.operations.summary.read",
+        "workforce.snapshot.read"
+      ]
     },
     {
       "id": "workforce-reporting",
-      "capabilities": ["workforce.snapshot.read", "payroll.prepare.readiness.read", "workforce.cost.bridge.read"]
+      "capabilities": [
+        "workforce.snapshot.read",
+        "payroll.prepare.readiness.read",
+        "workforce.cost.bridge.read"
+      ]
     },
     {
       "id": "hr-control-tower",
-      "capabilities": ["hr.operations.summary.read", "hr.contract-expiry.read", "attendance.operations.summary.read", "attendance.leave.balance-history.read", "attendance.person.daily-records.read", "person.lifecycle.readiness.read", "person.list.read"]
+      "capabilities": [
+        "hr.operations.summary.read",
+        "hr.contract-expiry.read",
+        "attendance.operations.summary.read",
+        "attendance.leave.balance-history.read",
+        "attendance.person.daily-records.read",
+        "person.lifecycle.readiness.read",
+        "person.list.read"
+      ]
     },
     {
       "id": "payroll-operations",
-      "capabilities": ["payroll.prepare.readiness.read", "payroll.run.status.read", "payroll.banking.batch-status.read", "payroll.retirement.status.read", "payroll.downstream.status.read", "payroll.variance.review.read", "person.list.read", "payroll.ledger.read"]
+      "capabilities": [
+        "payroll.prepare.readiness.read",
+        "payroll.run.status.read",
+        "payroll.banking.batch-status.read",
+        "payroll.retirement.status.read",
+        "payroll.downstream.status.read",
+        "payroll.variance.review.read",
+        "person.list.read",
+        "payroll.ledger.read",
+        "payroll.result.confirmation.update"
+      ]
     },
     {
       "id": "payroll-policy-builder",
-      "capabilities": ["payroll.settings.policy.read", "payroll.prepare.readiness.read", "payroll.policy.preview.read", "person.list.read", "payroll.payment-item.list.read", "payroll.payment-item.create", "payroll.payment-item.update", "payroll.deduction-item.list.read", "payroll.deduction-item.create", "payroll.deduction-item.update"]
+      "capabilities": [
+        "payroll.settings.policy.read",
+        "payroll.prepare.readiness.read",
+        "payroll.policy.preview.read",
+        "person.list.read",
+        "payroll.payment-item.list.read",
+        "payroll.payment-item.create",
+        "payroll.payment-item.update",
+        "payroll.deduction-item.list.read",
+        "payroll.deduction-item.create",
+        "payroll.deduction-item.update"
+      ]
     },
     {
       "id": "onboarding-import",
-      "capabilities": ["onboarding.import.catalog.read", "onboarding.import.preflight.read"]
+      "capabilities": [
+        "onboarding.import.catalog.read",
+        "onboarding.import.preflight.read"
+      ]
     }
   ]
 }

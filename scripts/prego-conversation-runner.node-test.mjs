@@ -18,12 +18,12 @@ import {
   childEnvironment,
   createRedactingTransform,
   extractTranscript,
-  loadPluginSkill,
+  loadPluginSkills,
   makeDeveloperInstruction,
   readPreviousConversation,
   requireLoopbackMcpUrl,
-  runPayrollConversation,
-} from "./prego-payroll-conversation-runner.mjs";
+  runConversation,
+} from "./prego-conversation-runner.mjs";
 
 async function assertProcessExited(pid, timeoutMs = 1_000) {
   const deadline = Date.now() + timeoutMs;
@@ -139,6 +139,73 @@ test("a prior run from another case cannot be resumed", () => {
   }
 });
 
+test("a resume cannot mix a different workflow snapshot or reasoning effort", () => {
+  const outputDir = mkdtempSync(join(tmpdir(), "prego-conversation-resume-"));
+  const previous = {
+    caseId: "executive-briefing",
+    mcpUrl: "http://127.0.0.1:8082/mcp",
+    mode: "plugin-skill",
+    fixtureScope: "company fixture A",
+    writePolicy: "deny",
+    model: "gpt-5.6-terra",
+    reasoningEffort: "high",
+    scenarioId: "executive-briefing",
+    scenarioSha256: "scenario-digest",
+    skillIds: ["company-briefing"],
+    skillSha256: "skill-digest",
+    transcript: { threadId: "thread-previous" },
+  };
+  try {
+    writeFileSync(
+      join(outputDir, "previous.summary.json"),
+      JSON.stringify(previous),
+    );
+    const options = {
+      ...previous,
+      id: "followup",
+      reasoningEffort: "medium",
+    };
+    assert.throws(
+      () => readPreviousConversation(outputDir, "previous", options),
+      /different reasoningEffort/,
+    );
+    assert.throws(
+      () =>
+        readPreviousConversation(outputDir, "previous", {
+          ...previous,
+          id: "followup",
+          skillIds: ["hr-control-tower"],
+        }),
+      /different skillIds/,
+    );
+  } finally {
+    rmSync(outputDir, { recursive: true, force: true });
+  }
+});
+
+test("raw scenario runs do not inject scenario workflows, while explicit raw workflows fail", async () => {
+  const options = {
+    id: "raw-scenario",
+    scenarioId: "executive-briefing",
+    mode: "raw-mcp",
+    mcpUrl: "http://127.0.0.1:8082/mcp",
+    fixtureScope: "Company fixture only",
+    tokenEnvVar: "PREGO_CONVERSATION_MISSING_TOKEN",
+  };
+  await assert.rejects(
+    () => runConversation(options),
+    /PREGO_CONVERSATION_MISSING_TOKEN is required/,
+  );
+  await assert.rejects(
+    () =>
+      runConversation({
+        ...options,
+        skillIds: ["company-briefing"],
+      }),
+    /raw-mcp mode must not include skillIds/,
+  );
+});
+
 test("runner isolates the agent without prescribing raw mode tool ordering", () => {
   const instruction = makeDeveloperInstruction({
     fixtureScope: "Company A local fixture only",
@@ -149,7 +216,7 @@ test("runner isolates the agent without prescribing raw mode tool ordering", () 
     cwd: "/tmp/isolated",
     question: "명절수당을 저장해줘",
     mcpUrl: "http://127.0.0.1:8082/mcp",
-    tokenEnvVar: "PREGO_PAYROLL_CONVERSATION_BEARER",
+    tokenEnvVar: "PREGO_CONVERSATION_BEARER",
     developerInstruction: instruction,
     answerPath: "/tmp/answer.md",
     previousThread: null,
@@ -169,6 +236,37 @@ test("runner isolates the agent without prescribing raw mode tool ordering", () 
   assert.equal(args.includes('approval_policy="on-request"'), true);
   assert.equal(args.includes('approvals_reviewer="auto_review"'), true);
   assert.equal(args.includes('approval_policy="never"'), false);
+  assert.equal(args.includes('model_reasoning_effort="high"'), true);
+});
+
+test("runner accepts only supported reasoning effort values", () => {
+  const args = buildInvocation({
+    cwd: "/tmp/isolated",
+    question: "인사 현황을 알려줘",
+    mcpUrl: "http://127.0.0.1:8082/mcp",
+    tokenEnvVar: "PREGO_CONVERSATION_BEARER",
+    developerInstruction: "fixture boundary",
+    answerPath: "/tmp/answer.md",
+    previousThread: null,
+    writePolicy: "deny",
+    reasoningEffort: "medium",
+  });
+  assert.equal(args.includes('model_reasoning_effort="medium"'), true);
+  assert.throws(
+    () =>
+      buildInvocation({
+        cwd: "/tmp/isolated",
+        question: "인사 현황을 알려줘",
+        mcpUrl: "http://127.0.0.1:8082/mcp",
+        tokenEnvVar: "PREGO_CONVERSATION_BEARER",
+        developerInstruction: "fixture boundary",
+        answerPath: "/tmp/answer.md",
+        previousThread: null,
+        writePolicy: "deny",
+        reasoningEffort: "max",
+      }),
+    /invalid reasoningEffort/,
+  );
 });
 
 test("deny write policy keeps the isolated agent read-only", () => {
@@ -176,7 +274,7 @@ test("deny write policy keeps the isolated agent read-only", () => {
     cwd: "/tmp/isolated",
     question: "명절수당을 알려줘",
     mcpUrl: "http://127.0.0.1:8082/mcp",
-    tokenEnvVar: "PREGO_PAYROLL_CONVERSATION_BEARER",
+    tokenEnvVar: "PREGO_CONVERSATION_BEARER",
     developerInstruction: "fixture boundary",
     answerPath: "/tmp/answer.md",
     previousThread: null,
@@ -204,11 +302,25 @@ test("child environment retains a custom CODEX_HOME", () => {
   }
 });
 
-test("plugin-skill snapshot contains its payroll reference and stable digest", () => {
-  const skill = loadPluginSkill();
+test("selected payroll workflow snapshot contains shared interpretation, reference, and stable digest", () => {
+  const skill = loadPluginSkills(["payroll-policy-builder"]);
   assert.match(skill.sha256, /^[a-f0-9]{64}$/);
+  assert.deepEqual(skill.ids, ["payroll-policy-builder"]);
   assert.equal(skill.content.includes("# Payroll interpretation"), true);
   assert.equal(skill.content.includes("# Payroll reference"), true);
+});
+
+test("selected non-payroll workflow omits the payroll reference", () => {
+  const skill = loadPluginSkills(["company-briefing"]);
+  assert.equal(skill.content.includes("# Shared interpretation"), true);
+  assert.equal(skill.content.includes("# Payroll reference"), false);
+});
+
+test("only packaged workflow IDs can be selected", () => {
+  assert.throws(
+    () => loadPluginSkills(["prego-interpretation"]),
+    /not a packaged workflow/,
+  );
 });
 
 test("actual Codex MCP event shape is finalized once and keeps only non-PII evaluation keys", () => {
@@ -308,13 +420,19 @@ test("actual Codex MCP event shape is finalized once and keeps only non-PII eval
   assert.equal(transcript.toolCalls.length, 2);
   assert.equal(transcript.updates.transportCompleted, 1);
   assert.equal(transcript.updates.autoApproved, 1);
+  assert.equal(transcript.toolCalls[0].startedEvent, 2);
+  assert.equal(transcript.toolCalls[0].completedEvent, 3);
   assert.deepEqual(transcript.updates.businessErrors, [
     { sequence: 1, errorKind: "prego-payload" },
   ]);
   assert.deepEqual(transcript.updates.subsequentReads, [
     {
       sequence: 2,
+      startedEvent: null,
+      completedEvent: 5,
+      server: null,
       transportStatus: "completed",
+      unfinished: false,
       businessStatus: "unknown",
       errorKind: null,
       approvalStatus: "not_recorded",
@@ -329,6 +447,96 @@ test("actual Codex MCP event shape is finalized once and keeps only non-PII eval
   assert.equal(malformedOnly.updates.invoked, false);
 });
 
+test("an interrupted update remains visible to evaluators without raw arguments", () => {
+  const transcript = extractTranscript(
+    JSON.stringify({
+      type: "item.started",
+      item: {
+        id: "unfinished-update",
+        type: "mcp_tool_call",
+        server: "prego_fixture",
+        tool: "prego_update",
+        arguments: {
+          capabilityId: "payroll.payment-item.update",
+          scope: {
+            mode: "selected",
+            companyIds: ["company-fixture-1"],
+            personIds: ["person-secret"],
+          },
+          privateFormula: "do-not-copy",
+        },
+        status: "in_progress",
+      },
+    }),
+  );
+  assert.equal(transcript.toolCalls.length, 1);
+  assert.equal(transcript.toolCalls[0].unfinished, true);
+  assert.equal(transcript.toolCalls[0].server, "prego_fixture");
+  assert.deepEqual(transcript.updates.unfinished, [
+    {
+      sequence: 1,
+      startedEvent: 1,
+      completedEvent: null,
+      server: "prego_fixture",
+      capabilityId: "payroll.payment-item.update",
+      scope: { mode: "selected", companyIds: ["company-fixture-1"] },
+    },
+  ]);
+  assert.equal(JSON.stringify(transcript).includes("person-secret"), false);
+  assert.equal(JSON.stringify(transcript).includes("do-not-copy"), false);
+});
+
+test("compact observations retain a read start that preceded update completion", () => {
+  const transcript = extractTranscript(
+    [
+      {
+        type: "item.started",
+        item: {
+          id: "update",
+          type: "mcp_tool_call",
+          tool: "prego_update",
+          status: "in_progress",
+        },
+      },
+      {
+        type: "item.started",
+        item: {
+          id: "read",
+          type: "mcp_tool_call",
+          tool: "prego_read",
+          status: "in_progress",
+        },
+      },
+      {
+        type: "item.completed",
+        item: {
+          id: "update",
+          type: "mcp_tool_call",
+          tool: "prego_update",
+          status: "completed",
+          result: { structured_content: {} },
+        },
+      },
+      {
+        type: "item.completed",
+        item: {
+          id: "read",
+          type: "mcp_tool_call",
+          tool: "prego_read",
+          status: "completed",
+          result: { structured_content: {} },
+        },
+      },
+    ]
+      .map(JSON.stringify)
+      .join("\n"),
+  );
+  const [update, read] = transcript.toolCalls;
+  assert.equal(update.completedEvent, 3);
+  assert.equal(read.startedEvent, 2);
+  assert.ok(read.startedEvent < update.completedEvent);
+});
+
 test("spawn failure produces a private SPAWN_ERROR summary instead of rejecting on error", async () => {
   const outputDir = mkdtempSync(
     join(tmpdir(), "prego-conversation-spawn-test-"),
@@ -340,10 +548,10 @@ test("spawn failure produces a private SPAWN_ERROR summary instead of rejecting 
   // genuinely unavailable without changing the runner's production command.
   process.env.PATH = outputDir;
   try {
-    const summary = await runPayrollConversation({
+    const summary = await runConversation({
       id: "spawn-error",
       caseId: "holiday-allowance",
-      question: "명절수당을 저장해줘",
+      question: "명절수당을 저장해줘 private-test-token",
       mcpUrl: "http://127.0.0.1:8082/mcp",
       fixtureScope: "Company fixture only",
       tokenEnvVar: tokenEnv,
@@ -352,6 +560,43 @@ test("spawn failure produces a private SPAWN_ERROR summary instead of rejecting 
     });
     assert.equal(summary.process.status, "SPAWN_ERROR");
     assert.equal(JSON.stringify(summary).includes("private-test-token"), false);
+    assert.equal(
+      readFileSync(summary.outputs.questionPath, "utf8"),
+      "명절수당을 저장해줘 [REDACTED_TOKEN]",
+    );
+  } finally {
+    if (originalPath === undefined) delete process.env.PATH;
+    else process.env.PATH = originalPath;
+    delete process.env[tokenEnv];
+    rmSync(outputDir, { recursive: true, force: true });
+  }
+});
+
+test("a scenario supplies selected workflows and provenance without exposing its question", async () => {
+  const outputDir = mkdtempSync(join(tmpdir(), "prego-conversation-scenario-"));
+  const tokenEnv = "PREGO_CONVERSATION_SCENARIO_TOKEN";
+  const originalPath = process.env.PATH;
+  process.env[tokenEnv] = "private-test-token";
+  process.env.PATH = outputDir;
+  try {
+    const summary = await runConversation({
+      id: "scenario-spawn-error",
+      scenarioId: "executive-briefing",
+      mcpUrl: "http://127.0.0.1:8082/mcp",
+      fixtureScope: "Company fixture only",
+      tokenEnvVar: tokenEnv,
+      outputDir,
+      timeoutMs: 1_000,
+      reasoningEffort: "medium",
+    });
+    assert.equal(summary.process.status, "SPAWN_ERROR");
+    assert.equal(summary.caseId, "executive-briefing");
+    assert.equal(summary.mode, "plugin-skill");
+    assert.deepEqual(summary.skillIds, ["company-briefing"]);
+    assert.equal(summary.scenarioId, "executive-briefing");
+    assert.match(summary.questionSha256, /^[a-f0-9]{64}$/);
+    assert.equal(summary.reasoningEffort, "medium");
+    assert.equal(JSON.stringify(summary).includes("우리 회사 인사"), false);
   } finally {
     if (originalPath === undefined) delete process.env.PATH;
     else process.env.PATH = originalPath;
@@ -380,7 +625,7 @@ while :; do /bin/sleep 1; done
   chmodSync(executable, 0o700);
   try {
     const startedAt = Date.now();
-    const summary = await runPayrollConversation({
+    const summary = await runConversation({
       id: "timeout-force-kill",
       caseId: "holiday-allowance",
       question: "명절수당을 저장해줘",
@@ -433,7 +678,7 @@ while :; do /bin/sleep 1; done
         process.execPath,
         [
           fileURLToPath(
-            new URL("./prego-payroll-conversation-runner.mjs", import.meta.url),
+            new URL("./prego-conversation-runner.mjs", import.meta.url),
           ),
           "--id",
           "signal-cancel",
