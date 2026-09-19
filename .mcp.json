@@ -3,6 +3,10 @@
     "prego": {
       "type": "http",
       "url": "https://api.prego.team/mcp"
+    },
+    "prego_dev": {
+      "type": "http",
+      "url": "https://api-dev.prego.team/mcp"
     }
   }
 }

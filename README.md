@@ -13,14 +13,15 @@ Prego의 인사·급여 데이터를 ChatGPT, Codex, Claude, Gemini CLI에서 �
 - `payroll-policy-builder`: 지급항목 계산식 초안 검증과 비저장 표본 테스트
 - `onboarding-import`: 고객 원본에서 필요한 공식 사원·급여 업로드 파일 생성과 비저장 사전검증
 
-플러그인은 `https://api.prego.team/mcp`만 사용한다. Prego 로그인과 외부 앱 연결 확인을 거치며, 접근 가능한 회사·기능·데이터 범위는 매 discovery와 호출마다 Prego가 다시 확인한다. MASTER·ADMIN은 `설정 > 외부 AI 연결`에서 제공자를 관리하며, 연결은 외부 앱에서 해제할 수 있다. 설정·실행 지원 여부와 입력은 현재 서버의 capability를 따른다. 정책 preview와 온보딩 사전검증은 비저장이며, 실제 은행 지급·외부 신고·전자서명·권한 변경은 지원하지 않는다. 화면 링크는 제품이 소비하는 회사·기간·탭·필터만 복원한다.
+플러그인은 서로 독립적으로 인증되는 두 MCP를 제공한다. `prego`는 production
+(`https://api.prego.team/mcp`), `prego_dev`는 development
+(`https://api-dev.prego.team/mcp`)다. Prego 로그인과 외부 앱 연결 확인을 거치며, 접근 가능한 회사·기능·데이터 범위는 매 discovery와 호출마다 Prego가 다시 확인한다. MASTER·ADMIN은 `설정 > 외부 AI 연결`에서 제공자를 관리하며, 연결은 외부 앱에서 해제할 수 있다. 설정·실행 지원 여부와 입력은 현재 서버의 capability를 따른다. 정책 preview와 온보딩 사전검증은 비저장이며, 실제 은행 지급·외부 신고·전자서명·권한 변경은 지원하지 않는다. 화면 링크는 제품이 소비하는 회사·기간·탭·필터만 복원한다.
 
 외부 AI가 반환 데이터를 저장·처리·국외이전하는 조건은 고객사가 선택한 서비스의 정책과 계약을 따른다. Prego MCP 감사 이벤트에는 호출 주체·외부 앱·tool·건수·상태만 남기며 prompt, tool 인자, 응답 payload는 저장하지 않는다.
 
 ## 연결
 
-모든 client는 Prego OAuth로 연결한다. 조회에는 `prego:read`가 필요하고,
-설정 변경과 실행에는 `prego:write`도 필요하다. 쓰기는 기존 SaaS의
+두 환경은 각각의 Prego OAuth `prego:mcp` scope로 연결한다. 쓰기는 기존 SaaS의
 앱 편집·해당 도메인 데이터 권한·서비스별 전체 접근 조건을 계속 확인한다. 조직 관리자가 해당 제공자를
 껐다면 새 연결, token 갱신, 기존 token을 사용한 호출이 모두 거부된다.
 
@@ -53,14 +54,16 @@ ChatGPT workspace를 사용하는 경우 workspace 관리자가 먼저 connector
 
 ### Codex
 
-이 저장소를 Prego plugin으로 설치하면 `.mcp.json`의 원격 MCP 설정이 함께 적용된다. MCP만 직접 등록할 때는 다음처럼 설정한 뒤 로그인한다.
+이 저장소를 Prego plugin으로 설치하면 `.mcp.json`의 production·development MCP 설정이 함께 적용된다. MCP만 직접 등록할 때는 두 환경을 각각 설정하고 로그인한다.
 
 ```sh
 codex mcp add prego --url https://api.prego.team/mcp
 codex mcp login prego
+codex mcp add prego_dev --url https://api-dev.prego.team/mcp
+codex mcp login prego_dev
 ```
 
-브라우저에서 Prego 로그인과 조직 선택을 완료한 뒤 새 Codex 세션에서 Prego tool을 사용할 수 있다.
+브라우저에서 각 환경의 Prego 로그인과 조직 선택을 완료한 뒤 새 Codex 세션에서 tool을 사용할 수 있다. 제공 스킬은 production `prego`를 기본으로 사용한다. development 검증 agent에는 `prego_dev`만 사용하도록 명시하고, 두 서버를 같은 이름으로 바꾸거나 URL을 교체하지 않는다.
 
 ### Claude
 
@@ -72,7 +75,7 @@ Team·Enterprise 조직에서는 Owner가 Organization connectors에 먼저 추�
 
 ### Gemini CLI
 
-`~/.gemini/settings.json`의 `mcpServers`에 Prego를 추가한다. Prego는 DCR을 제공하지 않으므로 `clientId`를 생략하면 안 된다.
+`~/.gemini/settings.json`의 `mcpServers`에 Prego를 추가한다. Prego는 DCR을 제공하지 않으므로 `clientId`를 생략하면 안 된다. development는 별도 `prego_dev` entry에 development URL을 사용한다.
 
 ```json
 {
@@ -82,7 +85,15 @@ Team·Enterprise 조직에서는 Owner가 Organization connectors에 먼저 추�
       "oauth": {
         "enabled": true,
         "clientId": "prego-gemini-cli",
-        "scopes": ["prego:read", "prego:write"]
+        "scopes": ["prego:mcp"]
+      }
+    },
+    "prego_dev": {
+      "httpUrl": "https://api-dev.prego.team/mcp",
+      "oauth": {
+        "enabled": true,
+        "clientId": "prego-gemini-cli",
+        "scopes": ["prego:mcp"]
       }
     }
   }
